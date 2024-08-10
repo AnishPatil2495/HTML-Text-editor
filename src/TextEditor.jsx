@@ -11,68 +11,134 @@ export const maintainCaretPosition = (event) => {
 };
 
 const TextEditor = () => {
-  const [content, setContent] = useState("");
-  const editorRef = useRef(null);
+  const [editorContent, setEditorContent] = useState(
+    "<div>This is a simple rich text editor.</div>"
+  );
 
-  useEffect(() => {
-    const editor = editorRef.current;
-    if (editor) {
-      editor.contentEditable = true;
-      editor.addEventListener("input", handleInput);
+  const applyStyle = (tag, style = {}) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const selectedText = range.extractContents();
+    const span = document.createElement(tag);
+
+    Object.keys(style).forEach((key) => {
+      span.style[key] = style[key];
+    });
+
+    span.appendChild(selectedText);
+    range.insertNode(span);
+    setEditorContent(document.getElementById("editor").innerHTML);
+  };
+
+  const removeStyle = (tag) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const parent = selection.anchorNode.parentNode;
+
+    if (parent.tagName === tag.toUpperCase()) {
+      const text = document.createTextNode(parent.innerText);
+      parent.parentNode.replaceChild(text, parent);
+      setEditorContent(document.getElementById("editor").innerHTML);
     }
-    return () => {
-      if (editor) {
-        editor.removeEventListener("input", handleInput);
+  };
+
+  const toggleStyle = (tag, style = {}) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const parent = selection.anchorNode.parentNode;
+    if (parent.tagName === tag.toUpperCase()) {
+      removeStyle(tag);
+    } else {
+      applyStyle(tag, style);
+    }
+  };
+
+  const changeFontSize = () => {
+    toggleStyle("span", { fontSize: "24px" });
+  };
+
+  const toggleList = (listType) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const parent = selection.anchorNode.parentNode;
+
+    if (parent.tagName === listType.toUpperCase()) {
+      // Unwrap the list item
+      const list = parent.parentNode;
+      const fragment = document.createDocumentFragment();
+      while (list.firstChild) {
+        fragment.appendChild(list.firstChild);
       }
-    };
-  }, []);
-
-  const handleInput = (e) => {
-    maintainCaretPosition(e);
-    setContent(e.target.innerHTML);
+      list.parentNode.replaceChild(fragment, list);
+    } else {
+      // Wrap selected text in a list
+      const list = document.createElement(listType);
+      const listItem = document.createElement("li");
+      listItem.appendChild(range.extractContents());
+      list.appendChild(listItem);
+      range.insertNode(list);
+    }
+    setEditorContent(document.getElementById("editor").innerHTML);
   };
 
-  const execCommand = (command) => {
-    document.execCommand(command, false, null);
+  const justifyText = (alignment) => {
+    toggleStyle("div", { textAlign: alignment });
   };
 
-  const execCommandWithValue = (command, value) => {
-    document.execCommand(command, false, value);
+  const createLink = () => {
+    const url = prompt("Enter the URL");
+    if (!url) return;
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.appendChild(range.extractContents());
+    range.insertNode(anchor);
+    setEditorContent(document.getElementById("editor").innerHTML);
+  };
+
+  const unlink = () => {
+    removeStyle("a");
   };
 
   return (
-    <div className="text-editor">
-      <div className="toolbar">
-        <button onClick={() => execCommand("bold")}>Bold</button>
-        <button onClick={() => execCommand("italic")}>Italic</button>
-        <button onClick={() => execCommand("underline")}>Underline</button>
-        <button onClick={() => execCommand("strikeThrough")}>Strike</button>
-        <button onClick={() => execCommandWithValue("formatBlock", "h1")}>
-          H1
-        </button>
-        <button onClick={() => execCommandWithValue("formatBlock", "h2")}>
-          H2
-        </button>
-        <button onClick={() => execCommand("insertUnorderedList")}>
-          Bullet List
-        </button>
-        <button onClick={() => execCommand("insertOrderedList")}>
-          Numbered List
-        </button>
-        <button onClick={() => execCommand("justifyLeft")}>Left Align</button>
-        <button onClick={() => execCommand("justifyCenter")}>
-          Center Align
-        </button>
-        <button onClick={() => execCommand("justifyRight")}>Right Align</button>
-        <button onClick={() => execCommand("justifyFull")}>Justify</button>
-        <button onClick={() => execCommand("createLink")}>Insert Link</button>
-        <button onClick={() => execCommand("unlink")}>Remove Link</button>
+    <div>
+      <div>
+        <button onClick={() => toggleStyle("b")}>Bold</button>
+        <button onClick={() => toggleStyle("i")}>Italic</button>
+        <button onClick={() => toggleStyle("u")}>Underline</button>
+        <button onClick={() => toggleStyle("strike")}>Strikethrough</button>
+        <button onClick={changeFontSize}>Font Size</button>
+        <button onClick={() => toggleList("ul")}>Unordered List</button>
+        <button onClick={() => toggleList("ol")}>Ordered List</button>
+        <button onClick={() => justifyText("left")}>Left Align</button>
+        <button onClick={() => justifyText("center")}>Center Align</button>
+        <button onClick={() => justifyText("right")}>Right Align</button>
+        <button onClick={() => justifyText("justify")}>Justify</button>
+        <button onClick={createLink}>Create Link</button>
+        <button onClick={unlink}>Unlink</button>
       </div>
       <div
-        ref={editorRef}
-        className="editor"
-        dangerouslySetInnerHTML={{ __html: content }}
-      ></div>
+        id="editor"
+        contentEditable
+        dangerouslySetInnerHTML={{ __html: editorContent }}
+        style={{
+          border: "1px solid #ccc",
+          padding: "10px",
+          minHeight: "100px",
+        }}
+        onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
+      />
     </div>
   );
 };
