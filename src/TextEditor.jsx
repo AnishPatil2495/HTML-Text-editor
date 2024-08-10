@@ -16,14 +16,16 @@ const TextEditor = () => {
 
     const range = selection.getRangeAt(0);
     const selectedText = range.extractContents();
-    const span = document.createElement(tag);
+    const element = document.createElement(tag);
 
     Object.keys(style).forEach((key) => {
-      span.style[key] = style[key];
+      element.style[key] = style[key];
     });
 
-    span.appendChild(selectedText);
-    range.insertNode(span);
+    element.appendChild(selectedText);
+    range.insertNode(element);
+
+    // Ensure the editor content is updated
     setEditorContent(document.getElementById("editor").innerHTML);
   };
 
@@ -35,13 +37,31 @@ const TextEditor = () => {
     const parent = selection.anchorNode.parentNode;
 
     if (parent.tagName === tag) {
-      const text = document.createTextNode(parent.innerText);
-      parent.parentNode.replaceChild(text, parent);
+      const fragment = document.createDocumentFragment();
+      while (parent.firstChild) {
+        fragment.appendChild(parent.firstChild);
+      }
+      range.deleteContents();
+      range.insertNode(fragment);
+
+      // Ensure the editor content is updated
       setEditorContent(document.getElementById("editor").innerHTML);
     }
   };
 
   const toggleStyle = (tag, style = {}) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const parent = selection.anchorNode.parentNode;
+    console.log("parent.tagName", parent.tagName, style);
+    if (parent.tagName === tag) {
+      removeStyle(tag);
+    } else {
+      applyStyle(tag, style);
+    }
+
+    // Update active commands
     setActiveCommands((prevCommands) => {
       const isActive = prevCommands.includes(tag);
       if (isActive) {
@@ -50,18 +70,7 @@ const TextEditor = () => {
         return [...prevCommands, tag];
       }
     });
-
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
-
-    const parent = selection.anchorNode.parentNode;
-    if (parent.tagName === tag) {
-      removeStyle(tag);
-    } else {
-      applyStyle(tag, style);
-    }
   };
-
   const changeFontSize = () => {
     toggleStyle("span", { fontSize: "24px" });
   };
@@ -234,9 +243,13 @@ const TextEditor = () => {
       .getElementById("editor")
       .addEventListener("keyup", checkActiveCommands);
   }, []);
+
   const handleChange = (e) => {
     setEditorContent(e.target.value);
   };
+
+  console.log("Editor content: ", editorContent);
+
   return (
     <div className="text-editor">
       <div className="toolbar">
@@ -327,17 +340,6 @@ const TextEditor = () => {
           isActive={false} // Unlink is never active initially
         />
       </div>
-      {/* <div
-        id="editor"
-        contentEditable
-        dangerouslySetInnerHTML={{ __html: editorContent }}
-        style={{
-          border: "1px solid #ccc",
-          padding: "10px",
-          minHeight: "100px",
-        }}
-        onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
-      /> */}
       <ContentEditable
         id="editor"
         innerRef={divRef}
@@ -348,6 +350,7 @@ const TextEditor = () => {
           border: "1px solid #ccc",
           padding: "10px",
           minHeight: "100px",
+          textAlign: "left",
         }}
       />
     </div>
