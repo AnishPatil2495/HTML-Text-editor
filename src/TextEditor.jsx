@@ -10,6 +10,10 @@ const TextEditor = () => {
   const [editorContent, setEditorContent] = useState("");
   const [selectedBlock, setSelectedBlock] = useState("p");
   const [fontSize, setFontSize] = useState("24px");
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const editorRef = useRef(null);
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
@@ -26,6 +30,20 @@ const TextEditor = () => {
     span.appendChild(selectedText);
     range.insertNode(span);
     setEditorContent(document.getElementById("editor").innerHTML);
+  };
+
+  const undo = () => {
+    if (!undoStack.length) return;
+    const lastState = undoStack.pop();
+    setRedoStack([...redoStack, editorContent]);
+    setEditorContent(lastState);
+  };
+
+  const redo = () => {
+    if (!redoStack.length) return;
+    const nextState = redoStack.pop();
+    setUndoStack([...undoStack, editorContent]);
+    setEditorContent(nextState);
   };
 
   const removeStyle = (tag) => {
@@ -228,6 +246,58 @@ const TextEditor = () => {
     }
   };
 
+  const handleImageUpload = () => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = reader.result;
+
+        // Create an image element
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.maxWidth = "100%"; // Ensure the image fits within the editor
+        console.log(img, "img");
+
+        // Prevent image from being removed on click
+        img.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+        });
+
+        // Insert the image at the current selection or at the end of the editor
+        const editor = divRef.current;
+
+        if (editor) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents(); // Remove any selected content
+            range.insertNode(img);
+            range.collapse(false); // Ensure cursor is placed after the image
+          } else {
+            editor.appendChild(img);
+          }
+
+          // Move cursor to the end after inserting image
+          const newRange = document.createRange();
+          const newSelection = window.getSelection();
+          newRange.selectNodeContents(editor);
+          newRange.collapse(false);
+          newSelection.removeAllRanges();
+          newSelection.addRange(newRange);
+
+          setEditorContent(editor.innerHTML);
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+  };
+
   useEffect(() => {
     document
       .getElementById("editor")
@@ -238,7 +308,10 @@ const TextEditor = () => {
   }, []);
 
   const handleChange = (e) => {
-    setEditorContent(e.target.value);
+    const newContent = e.target.value;
+    setUndoStack([...undoStack, editorContent]);
+    setEditorContent(newContent);
+    setRedoStack([]);
   };
 
   return (
@@ -348,6 +421,22 @@ const TextEditor = () => {
           onClick={unlink}
           icon={icons.unlink}
           isActive={false} // Unlink is never active initially
+        />
+        <EditorButton
+          onClick={undo}
+          icon={icons.undo}
+          isActive={false} // Unlink is never active initially
+        />
+        <EditorButton
+          onClick={redo}
+          icon={icons.redo}
+          isActive={false} // Unlink is never active initially
+        />
+
+        <EditorButton
+          onClick={handleImageUpload}
+          icon={icons.imageUpload}
+          isActive={false}
         />
       </div>
       {/* <div
