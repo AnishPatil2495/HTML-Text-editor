@@ -200,16 +200,32 @@ const TextEditor = () => {
     if (!selection.rangeCount) return;
 
     const range = selection.getRangeAt(0);
-    const parent = selection.anchorNode.parentNode;
+    let parent = selection.anchorNode.parentNode;
 
-    const newBlock = document.createElement(blockType);
+    // Check if the current parent is a block element (e.g., P, H1, H2, etc.)
+    if (["P", "H1", "H2", "H3", "H4", "H5", "H6"].includes(parent.tagName)) {
+      // Replace the existing block element with the new block type
+      const newBlock = document.createElement(blockType);
 
-    newBlock.appendChild(range.extractContents());
+      // Move all children from the old block to the new block
+      while (parent.firstChild) {
+        newBlock.appendChild(parent.firstChild);
+      }
 
-    range.insertNode(newBlock);
+      // Replace the old block with the new block
+      parent.parentNode.replaceChild(newBlock, parent);
+      parent = newBlock; // Update the parent reference to the new block
+    } else {
+      // If the parent is not a block element, create a new block and insert it
+      const newBlock = document.createElement(blockType);
+      newBlock.appendChild(range.extractContents());
+      range.insertNode(newBlock);
+      parent = newBlock;
+    }
 
+    // Adjust the selection to include the new block
     const newRange = document.createRange();
-    newRange.selectNodeContents(newBlock);
+    newRange.selectNodeContents(parent);
     selection.removeAllRanges();
     selection.addRange(newRange);
 
