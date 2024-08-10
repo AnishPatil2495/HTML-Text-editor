@@ -11,9 +11,7 @@ export const maintainCaretPosition = (event) => {
 };
 
 const TextEditor = () => {
-  const [editorContent, setEditorContent] = useState(
-    "<div>This is a simple rich text editor.</div>"
-  );
+  const [editorContent, setEditorContent] = useState();
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
