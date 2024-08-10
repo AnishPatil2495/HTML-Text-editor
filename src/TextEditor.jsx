@@ -8,7 +8,8 @@ const TextEditor = () => {
   const divRef = useRef(null);
   const [activeCommands, setActiveCommands] = useState([]);
   const [editorContent, setEditorContent] = useState("");
-  const [selectedBlock, setSelectedBlock] = useState("p"); // Default to paragraph
+  const [selectedBlock, setSelectedBlock] = useState("p");
+  const [fontSize, setFontSize] = useState("24px");
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -80,8 +81,9 @@ const TextEditor = () => {
     }
   };
 
-  const changeFontSize = () => {
-    toggleStyle("span", { fontSize: "24px" });
+  const changeFontSize = (size) => {
+    setFontSize(size);
+    toggleStyle("span", { fontSize: size });
   };
 
   const toggleList = (listType) => {
@@ -313,8 +315,8 @@ const TextEditor = () => {
   };
 
   return (
-    <div className='text-editor'>
-      <div className='toolbar'>
+    <div className="text-editor">
+      <div className="toolbar">
         <select
           value={selectedBlock}
           onChange={(e) => changeBlockType(e.target.value)}
@@ -326,15 +328,40 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}>
-          <option value='p'>Paragraph</option>
-          <option value='h1'>Heading 1</option>
-          <option value='h2'>Heading 2</option>
-          <option value='h3'>Heading 3</option>
-          <option value='h4'>Heading 4</option>
-          <option value='h5'>Heading 5</option>
-          <option value='h6'>Heading 6</option>
+          }}
+        >
+          <option value="p">Paragraph</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="h4">Heading 4</option>
+          <option value="h5">Heading 5</option>
+          <option value="h6">Heading 6</option>
         </select>
+
+        <select
+          value={fontSize}
+          onChange={(e) => changeFontSize(e.target.value)}
+          style={{
+            padding: "10px 15px",
+            margin: "5px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+            backgroundColor: "#282c34",
+            color: "#ffffff",
+            cursor: "pointer",
+          }}
+        >
+          <option value="12px">12</option>
+          <option value="14px">14</option>
+          <option value="16px">16</option>
+          <option value="18px">18</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="28px">28</option>
+          <option value="32px">32</option>
+        </select>
+
         <EditorButton
           onClick={() => toggleStyle("b")}
           icon={icons.bold}
@@ -354,11 +381,6 @@ const TextEditor = () => {
           onClick={() => toggleStyle("strike")}
           icon={icons.strikethrough}
           isActive={activeCommands.includes("strike")}
-        />
-        <EditorButton
-          onClick={changeFontSize}
-          label='Font Size'
-          isActive={activeCommands.includes("span")}
         />
         <EditorButton
           onClick={() => toggleList("ul")}
@@ -429,7 +451,7 @@ const TextEditor = () => {
         onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
       /> */}
       <ContentEditable
-        id='editor'
+        id="editor"
         innerRef={divRef}
         html={editorContent}
         disabled={false}
