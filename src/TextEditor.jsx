@@ -234,8 +234,8 @@ const TextEditor = () => {
   }, []);
 
   return (
-    <div className="text-editor">
-      <div className="toolbar">
+    <div className='text-editor'>
+      <div className='toolbar'>
         <select
           value={selectedBlock}
           onChange={(e) => changeBlockType(e.target.value)}
@@ -247,15 +247,14 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}
-        >
-          <option value="p">Paragraph</option>
-          <option value="h1">Heading 1</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-          <option value="h4">Heading 4</option>
-          <option value="h5">Heading 5</option>
-          <option value="h6">Heading 6</option>
+          }}>
+          <option value='p'>Paragraph</option>
+          <option value='h1'>Heading 1</option>
+          <option value='h2'>Heading 2</option>
+          <option value='h3'>Heading 3</option>
+          <option value='h4'>Heading 4</option>
+          <option value='h5'>Heading 5</option>
+          <option value='h6'>Heading 6</option>
         </select>
         <EditorButton
           onClick={() => toggleStyle("b")}
@@ -279,7 +278,7 @@ const TextEditor = () => {
         />
         <EditorButton
           onClick={changeFontSize}
-          label="Font Size"
+          label='Font Size'
           isActive={activeCommands.includes("span")}
         />
         <EditorButton
@@ -324,7 +323,7 @@ const TextEditor = () => {
         />
       </div>
       <div
-        id="editor"
+        id='editor'
         contentEditable
         dangerouslySetInnerHTML={{ __html: editorContent }}
         style={{
