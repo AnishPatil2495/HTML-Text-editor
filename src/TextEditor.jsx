@@ -8,7 +8,11 @@ const TextEditor = () => {
   const divRef = useRef(null);
   const [activeCommands, setActiveCommands] = useState([]);
   const [editorContent, setEditorContent] = useState("");
-  const [selectedBlock, setSelectedBlock] = useState("p"); // Default to paragraph
+  const [selectedBlock, setSelectedBlock] = useState("p");
+  const [fontSize, setFontSize] = useState("24px");
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
+  const editorRef = useRef(null);
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
@@ -25,6 +29,20 @@ const TextEditor = () => {
     span.appendChild(selectedText);
     range.insertNode(span);
     setEditorContent(document.getElementById("editor").innerHTML);
+  };
+
+  const undo = () => {
+    if (!undoStack.length) return;
+    const lastState = undoStack.pop();
+    setRedoStack([...redoStack, editorContent]);
+    setEditorContent(lastState);
+  };
+
+  const redo = () => {
+    if (!redoStack.length) return;
+    const nextState = redoStack.pop();
+    setUndoStack([...undoStack, editorContent]);
+    setEditorContent(nextState);
   };
 
   const removeStyle = (tag) => {
@@ -62,8 +80,9 @@ const TextEditor = () => {
     }
   };
 
-  const changeFontSize = () => {
-    toggleStyle("span", { fontSize: "24px" });
+  const changeFontSize = (size) => {
+    setFontSize(size);
+    toggleStyle("span", { fontSize: size });
   };
 
   const toggleList = (listType) => {
@@ -102,15 +121,49 @@ const TextEditor = () => {
   };
 
   const justifyText = (alignment) => {
+    const commandMap = {
+      left: "justifyLeft",
+      center: "justifyCenter",
+      right: "justifyRight",
+      justify: "justify",
+    };
+
+    // Check if the alignment is already active
+    const isActive = activeCommands.includes(commandMap[alignment]);
+
+    // Clear previous alignment commands
     setActiveCommands((prevCommands) => {
-      const isActive = prevCommands.includes(alignment);
-      if (isActive) {
-        return prevCommands.filter((cmd) => cmd !== alignment);
-      } else {
-        return [...prevCommands, alignment];
-      }
+      const cleanedCommands = prevCommands.filter(
+        (cmd) =>
+          cmd !== "justifyLeft" &&
+          cmd !== "justifyCenter" &&
+          cmd !== "justifyRight" &&
+          cmd !== "justify"
+      );
+
+      // If the alignment was active, toggle it off, otherwise add the new alignment
+      return isActive
+        ? cleanedCommands
+        : [...cleanedCommands, commandMap[alignment]];
     });
-    toggleStyle("div", { textAlign: alignment });
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const parent = selection.anchorNode.parentNode;
+
+    if (isActive) {
+      // If the alignment is active, toggle it off by resetting the text alignment
+      if (parent && parent.style.textAlign === alignment) {
+        parent.style.textAlign = "";
+      }
+      return;
+    }
+
+    // Apply the new alignment
+    parent.style.textAlign = alignment;
+    setEditorContent(document.getElementById("editor").innerHTML);
   };
 
   const createLink = () => {
@@ -212,9 +265,7 @@ const TextEditor = () => {
       if (cmd) activeCmds.push(cmd);
     }
 
-    setActiveCommands((prevCommands) => {
-      return [...new Set([...prevCommands, ...activeCmds])];
-    });
+    setActiveCommands(activeCmds);
 
     // Set the selected block type (p, h1, h2, etc.) only if it has changed
     if (["P", "H1", "H2", "H3", "H4", "H5", "H6"].includes(tagName)) {
@@ -226,6 +277,57 @@ const TextEditor = () => {
     }
   };
 
+  const handleImageUpload = () => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = reader.result;
+
+        // Create an image element
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.maxWidth = "100%"; // Ensure the image fits within the editor
+
+        // Prevent image from being removed on click
+        img.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+        });
+
+        // Insert the image at the current selection or at the end of the editor
+        const editor = divRef.current;
+
+        if (editor) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents(); // Remove any selected content
+            range.insertNode(img);
+            range.collapse(false); // Ensure cursor is placed after the image
+          } else {
+            editor.appendChild(img);
+          }
+
+          // Move cursor to the end after inserting image
+          const newRange = document.createRange();
+          const newSelection = window.getSelection();
+          newRange.selectNodeContents(editor);
+          newRange.collapse(false);
+          newSelection.removeAllRanges();
+          newSelection.addRange(newRange);
+
+          setEditorContent(editor.innerHTML);
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+  };
+
   useEffect(() => {
     document
       .getElementById("editor")
@@ -234,9 +336,14 @@ const TextEditor = () => {
       .getElementById("editor")
       .addEventListener("keyup", checkActiveCommands);
   }, []);
+
   const handleChange = (e) => {
-    setEditorContent(e.target.value);
+    const newContent = e.target.value;
+    setUndoStack([...undoStack, editorContent]);
+    setEditorContent(newContent);
+    setRedoStack([]);
   };
+
   return (
     <div className='text-editor'>
       <div className='toolbar'>
@@ -260,6 +367,29 @@ const TextEditor = () => {
           <option value='h5'>Heading 5</option>
           <option value='h6'>Heading 6</option>
         </select>
+
+        <select
+          value={fontSize}
+          onChange={(e) => changeFontSize(e.target.value)}
+          style={{
+            padding: "10px 15px",
+            margin: "5px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+            backgroundColor: "#282c34",
+            color: "#ffffff",
+            cursor: "pointer",
+          }}>
+          <option value='12px'>12</option>
+          <option value='14px'>14</option>
+          <option value='16px'>16</option>
+          <option value='18px'>18</option>
+          <option value='20px'>20</option>
+          <option value='24px'>24</option>
+          <option value='28px'>28</option>
+          <option value='32px'>32</option>
+        </select>
+
         <EditorButton
           onClick={() => toggleStyle("b")}
           icon={icons.bold}
@@ -279,11 +409,6 @@ const TextEditor = () => {
           onClick={() => toggleStyle("strike")}
           icon={icons.strikethrough}
           isActive={activeCommands.includes("strike")}
-        />
-        <EditorButton
-          onClick={changeFontSize}
-          label='Font Size'
-          isActive={activeCommands.includes("span")}
         />
         <EditorButton
           onClick={() => toggleList("ul")}
@@ -324,6 +449,22 @@ const TextEditor = () => {
           onClick={unlink}
           icon={icons.unlink}
           isActive={false} // Unlink is never active initially
+        />
+        <EditorButton
+          onClick={undo}
+          icon={icons.undo}
+          isActive={false} // Undo is never active initially
+        />
+        <EditorButton
+          onClick={redo}
+          icon={icons.redo}
+          isActive={false} // Redo is never active initially
+        />
+
+        <EditorButton
+          onClick={handleImageUpload}
+          icon={icons.imageUpload}
+          isActive={false}
         />
       </div>
       <ContentEditable
