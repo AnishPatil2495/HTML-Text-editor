@@ -1,19 +1,47 @@
 .text-editor {
-  width: 80%;
-  margin: 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  column-gap: 32px;
+  row-gap: 32px;
 }
 
 .toolbar {
   display: flex;
-  justify-content: center;
-  /* margin-bottom: 10px; */
+  flex-direction: column;
+  row-gap: 16px;
 }
 
-.editor {
-  border: 1px solid #ccc;
-  min-height: 200px;
-  padding: 10px;
+.toolbar-selects {
+  column-gap: 16px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.toolbar-buttons {
+  display: flex;
+  column-gap: 16px;
+  flex-wrap: wrap;
+  row-gap: 16px;
+}
+
+.buttons {
+  display: flex;
+  column-gap: 16px;
+  flex-wrap: wrap;
+}
+
+#editor {
+  width: 98.5%;
+  border: 2px solid rgb(161, 255, 20);
+  border-radius: 8px;
+  height: calc(100vh - 250px);
+  padding: 16px;
   outline: none;
+  caret-color: rgb(161, 255, 20);
+  color: white;
+  font-size: 25px;
 }
 
 /* heading */
@@ -43,3 +71,46 @@
 .heading-dropdown:focus {
   border: 1px solid #007bff;
 }
+
+
+.action-buttons{
+ border: 2px solid rgb(161, 255, 20);
+ border-radius: 8px;
+ height: 54px;
+ width: 54px;
+ background-color: #212121;
+ cursor: pointer;
+}
+
+.action-selects {
+  border: 2px solid rgb(161, 255, 20);
+  border-radius: 8px;
+  height: 35px;
+  font-family:Verdana, Geneva, Tahoma, sans-serif;
+  font-size: 16px;
+  width: 54px;
+  background-color: #212121;
+  color: white;
+  width: 200px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+ }
+
+ .codeview{
+  width: 98.5%;
+        height: calc(100vh - 250px);
+        padding: 10px;
+        border: 2px solid rgb(161, 255, 20);
+        font-family:monospace;
+        font-size: 24px;
+        background-color: #2d2d2d;
+        color: #ffffff;
+        line-height: 1.5;
+        white-space: pre;
+        overflow: auto;
+        caret-color: rgb(161, 255, 20);
+        outline: none;
+        resize: none;
+        border-radius: 8px;
+ }
