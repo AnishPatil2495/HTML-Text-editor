@@ -11,6 +11,8 @@ const TextEditor = () => {
   const [selectedBlock, setSelectedBlock] = useState("p"); // Default to paragraph
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const editorRef = useRef(null);
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
@@ -28,7 +30,6 @@ const TextEditor = () => {
     range.insertNode(span);
     setEditorContent(document.getElementById("editor").innerHTML);
   };
-
 
   const undo = () => {
     if (!undoStack.length) return;
@@ -243,6 +244,58 @@ const TextEditor = () => {
     }
   };
 
+  const handleImageUpload = () => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = reader.result;
+
+        // Create an image element
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.maxWidth = "100%"; // Ensure the image fits within the editor
+        console.log(img, "img");
+
+        // Prevent image from being removed on click
+        img.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+        });
+
+        // Insert the image at the current selection or at the end of the editor
+        const editor = divRef.current;
+
+        if (editor) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents(); // Remove any selected content
+            range.insertNode(img);
+            range.collapse(false); // Ensure cursor is placed after the image
+          } else {
+            editor.appendChild(img);
+          }
+
+          // Move cursor to the end after inserting image
+          const newRange = document.createRange();
+          const newSelection = window.getSelection();
+          newRange.selectNodeContents(editor);
+          newRange.collapse(false);
+          newSelection.removeAllRanges();
+          newSelection.addRange(newRange);
+
+          setEditorContent(editor.innerHTML);
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+  };
+
   useEffect(() => {
     document
       .getElementById("editor")
@@ -260,8 +313,8 @@ const TextEditor = () => {
   };
 
   return (
-    <div className="text-editor">
-      <div className="toolbar">
+    <div className='text-editor'>
+      <div className='toolbar'>
         <select
           value={selectedBlock}
           onChange={(e) => changeBlockType(e.target.value)}
@@ -273,15 +326,14 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}
-        >
-          <option value="p">Paragraph</option>
-          <option value="h1">Heading 1</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-          <option value="h4">Heading 4</option>
-          <option value="h5">Heading 5</option>
-          <option value="h6">Heading 6</option>
+          }}>
+          <option value='p'>Paragraph</option>
+          <option value='h1'>Heading 1</option>
+          <option value='h2'>Heading 2</option>
+          <option value='h3'>Heading 3</option>
+          <option value='h4'>Heading 4</option>
+          <option value='h5'>Heading 5</option>
+          <option value='h6'>Heading 6</option>
         </select>
         <EditorButton
           onClick={() => toggleStyle("b")}
@@ -305,7 +357,7 @@ const TextEditor = () => {
         />
         <EditorButton
           onClick={changeFontSize}
-          label="Font Size"
+          label='Font Size'
           isActive={activeCommands.includes("span")}
         />
         <EditorButton
@@ -358,6 +410,12 @@ const TextEditor = () => {
           icon={icons.redo}
           isActive={false} // Unlink is never active initially
         />
+
+        <EditorButton
+          onClick={handleImageUpload}
+          icon={icons.imageUpload}
+          isActive={false}
+        />
       </div>
       {/* <div
         id="editor"
@@ -371,7 +429,7 @@ const TextEditor = () => {
         onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
       /> */}
       <ContentEditable
-        id="editor"
+        id='editor'
         innerRef={divRef}
         html={editorContent}
         disabled={false}
