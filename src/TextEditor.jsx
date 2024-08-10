@@ -120,14 +120,10 @@ const TextEditor = () => {
         <EditorButton onClick={() => toggleStyle("i")} icon={icons.italic} />
         <EditorButton onClick={() => toggleStyle("u")} icon={icons.underline} />
         <EditorButton
-          onClick={() => toggleStyle("u")}
+          onClick={() => toggleStyle("strike")}
           icon={icons.strikethrough}
         />
         <EditorButton onClick={changeFontSize} label="Font Size" />
-        <EditorButton
-          onClick={() => execCommandWithValue("formatBlock", "h2")}
-          label="H2"
-        />
         <EditorButton
           onClick={() => toggleList("ul")}
           icon={icons.unorderedlist}
