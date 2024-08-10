@@ -3,6 +3,39 @@ import "./TextEditor.css";
 import { EditorButton } from "./components/button/button";
 import { icons } from "./assets";
 import ContentEditable from "./ContentEditable";
+import DOMPurify from "dompurify";
+
+const CodeView = ({ content, onChange }) => {
+  return (
+    <textarea
+      value={content}
+      onChange={(e) => onChange(e)}
+      style={{
+        width: "100%",
+        height: "400px",
+        padding: "10px",
+        border: "1px solid #ccc",
+        fontFamily: "monospace",
+        fontSize: "14px",
+        backgroundColor: "#2d2d2d",
+        color: "#ffffff",
+        lineHeight: "1.5",
+        whiteSpace: "pre",
+        overflow: "auto",
+        caretColor: "#ffffff",
+        outline: "none",
+        resize: "none",
+        borderRadius: "4px",
+      }}
+    />
+  );
+};
+
+const decodeHtml = (html) => {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
+};
 
 const TextEditor = () => {
   const divRef = useRef(null);
@@ -13,7 +46,7 @@ const TextEditor = () => {
   const [fontFamily, setFontFamily] = useState("Roboto");
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
-  const editorRef = useRef(null);
+  const [codeView, setCodeView] = useState(false);
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
@@ -392,16 +425,85 @@ const TextEditor = () => {
       .addEventListener("keyup", checkActiveCommands);
   }, []);
 
-  const handleChange = (e) => {
-    const newContent = e.target.value;
-    setUndoStack([...undoStack, editorContent]);
-    setEditorContent(newContent);
-    setRedoStack([]);
+  const applyInlineStyles = (styleTag, body) => {
+    const styleSheet = styleTag.sheet;
+    const rules = styleSheet.cssRules;
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i];
+      const elements = body.querySelectorAll(rule.selectorText);
+      elements.forEach((element) => {
+        for (let j = 0; j < rule.style.length; j++) {
+          const property = rule.style[j];
+          element.style[property] = rule.style.getPropertyValue(property);
+        }
+      });
+    }
   };
 
+  const transformHtml = (html) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(DOMPurify.sanitize(html), "text/html");
+
+    // Apply inline styles from <style> tags
+    const styleTags = doc.querySelectorAll("style");
+    styleTags.forEach((styleTag) => {
+      applyInlineStyles(styleTag, doc.body);
+      styleTag.remove();
+    });
+
+    // Wrap tables and images in figure tags
+    const tables = doc.querySelectorAll("table");
+    tables.forEach((table) => {
+      const figure = doc.createElement("figure");
+      figure.classList.add("table");
+      table.parentNode.replaceChild(figure, table);
+      figure.appendChild(table);
+    });
+
+    const images = doc.querySelectorAll("img");
+    images.forEach((image) => {
+      const figure = doc.createElement("figure");
+      figure.classList.add("image");
+      image.parentNode.replaceChild(figure, image);
+      figure.appendChild(image);
+    });
+
+    return doc.body.innerHTML;
+  };
+
+  const toggleCodeView = () => {
+    setCodeView((prevCodeView) => {
+      let sanitizedContent = editorContent;
+      if (prevCodeView) {
+        sanitizedContent = transformHtml(editorContent);
+      }
+      setEditorContent(sanitizedContent);
+      return !prevCodeView;
+    });
+  };
+
+  const handleChange = (e) => {
+    const newContent = e.target.value;
+
+    if (codeView) {
+      setEditorContent(newContent);
+    } else {
+      setUndoStack([...undoStack, editorContent]);
+      setEditorContent(newContent);
+      setRedoStack([]);
+    }
+  };
+
+  useEffect(() => {
+    if (divRef.current && !codeView) {
+      divRef.current.focus();
+      divRef.current.blur();
+    }
+  }, [codeView]);
+
   return (
-    <div className='text-editor'>
-      <div className='toolbar'>
+    <div className="text-editor">
+      <div className="toolbar">
         <select
           value={selectedBlock}
           onChange={(e) => changeBlockType(e.target.value)}
@@ -413,14 +515,15 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}>
-          <option value='p'>Paragraph</option>
-          <option value='h1'>Heading 1</option>
-          <option value='h2'>Heading 2</option>
-          <option value='h3'>Heading 3</option>
-          <option value='h4'>Heading 4</option>
-          <option value='h5'>Heading 5</option>
-          <option value='h6'>Heading 6</option>
+          }}
+        >
+          <option value="p">Paragraph</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="h4">Heading 4</option>
+          <option value="h5">Heading 5</option>
+          <option value="h6">Heading 6</option>
         </select>
 
         <select
@@ -434,15 +537,16 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}>
-          <option value='12px'>12</option>
-          <option value='14px'>14</option>
-          <option value='16px'>16</option>
-          <option value='18px'>18</option>
-          <option value='20px'>20</option>
-          <option value='24px'>24</option>
-          <option value='28px'>28</option>
-          <option value='32px'>32</option>
+          }}
+        >
+          <option value="12px">12</option>
+          <option value="14px">14</option>
+          <option value="16px">16</option>
+          <option value="18px">18</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="28px">28</option>
+          <option value="32px">32</option>
         </select>
 
         <select
@@ -456,11 +560,12 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}>
-          <option value='Roboto'>Roboto</option>
-          <option value='Times New Roman'>Times New Roman</option>
-          <option value='Courier New'>Courier New</option>
-          <option value='verdana'>verdana</option>
+          }}
+        >
+          <option value="Roboto">Roboto</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+          <option value="verdana">verdana</option>
         </select>
 
         <EditorButton
@@ -554,19 +659,28 @@ const TextEditor = () => {
           isActive={false}
           title="Insert Image"
         />
+        <EditorButton
+          onClick={toggleCodeView}
+          icon={icons.code}
+          isActive={codeView}
+        />
       </div>
-      <ContentEditable
-        id='editor'
-        innerRef={divRef}
-        html={editorContent}
-        disabled={false}
-        onChange={handleChange}
-        style={{
-          border: "1px solid #ccc",
-          padding: "10px",
-          minHeight: "100px",
-        }}
-      />
+      {codeView ? (
+        <CodeView content={editorContent} onChange={handleChange} />
+      ) : (
+        <ContentEditable
+          id="editor"
+          innerRef={divRef}
+          html={decodeHtml(editorContent)}
+          disabled={false}
+          onChange={(e) => handleChange(e)}
+          style={{
+            border: "1px solid #ccc",
+            padding: "10px",
+            minHeight: "100px",
+          }}
+        />
+      )}
     </div>
   );
 };
