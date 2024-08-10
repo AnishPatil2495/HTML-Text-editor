@@ -11,6 +11,7 @@ const TextEditor = () => {
   const [selectedBlock, setSelectedBlock] = useState("p"); // Default to paragraph
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
+  const [codeView, setCodeView] = useState(false)
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
@@ -259,6 +260,11 @@ const TextEditor = () => {
     setRedoStack([]);
   };
 
+
+  const toggleCodeView = () => {
+    setCodeView(!codeView)
+  }
+  
   return (
     <div className="text-editor">
       <div className="toolbar">
@@ -346,17 +352,22 @@ const TextEditor = () => {
         <EditorButton
           onClick={unlink}
           icon={icons.unlink}
-          isActive={false} // Unlink is never active initially
+          isActive={false} 
         />
         <EditorButton
           onClick={undo}
           icon={icons.undo}
-          isActive={false} // Unlink is never active initially
+          isActive={false} 
         />
         <EditorButton
           onClick={redo}
           icon={icons.redo}
-          isActive={false} // Unlink is never active initially
+          isActive={false} 
+        />
+         <EditorButton
+          onClick={toggleCodeView}
+          icon={icons.code}
+          isActive={codeView}
         />
       </div>
       {/* <div
@@ -373,9 +384,11 @@ const TextEditor = () => {
       <ContentEditable
         id="editor"
         innerRef={divRef}
+        key={codeView}
         html={editorContent}
         disabled={false}
         onChange={handleChange}
+        allowHtml={codeView}
         style={{
           border: "1px solid #ccc",
           padding: "10px",
