@@ -10,6 +10,7 @@ const TextEditor = () => {
   const [editorContent, setEditorContent] = useState("");
   const [selectedBlock, setSelectedBlock] = useState("p");
   const [fontSize, setFontSize] = useState("24px");
+  const [fontFamily, setFontFamily] = useState("Roboto");
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
   const editorRef = useRef(null);
@@ -206,16 +207,32 @@ const TextEditor = () => {
     if (!selection.rangeCount) return;
 
     const range = selection.getRangeAt(0);
-    const parent = selection.anchorNode.parentNode;
+    let parent = selection.anchorNode.parentNode;
 
-    const newBlock = document.createElement(blockType);
+    // Check if the current parent is a block element (e.g., P, H1, H2, etc.)
+    if (["P", "H1", "H2", "H3", "H4", "H5", "H6"].includes(parent.tagName)) {
+      // Replace the existing block element with the new block type
+      const newBlock = document.createElement(blockType);
 
-    newBlock.appendChild(range.extractContents());
+      // Move all children from the old block to the new block
+      while (parent.firstChild) {
+        newBlock.appendChild(parent.firstChild);
+      }
 
-    range.insertNode(newBlock);
+      // Replace the old block with the new block
+      parent.parentNode.replaceChild(newBlock, parent);
+      parent = newBlock; // Update the parent reference to the new block
+    } else {
+      // If the parent is not a block element, create a new block and insert it
+      const newBlock = document.createElement(blockType);
+      newBlock.appendChild(range.extractContents());
+      range.insertNode(newBlock);
+      parent = newBlock;
+    }
 
+    // Adjust the selection to include the new block
     const newRange = document.createRange();
-    newRange.selectNodeContents(newBlock);
+    newRange.selectNodeContents(parent);
     selection.removeAllRanges();
     selection.addRange(newRange);
 
@@ -281,6 +298,44 @@ const TextEditor = () => {
           : prevBlock;
       });
     }
+  };
+
+  const applyFontToSelection = (fontFamily) => {
+    setFontFamily(fontFamily);
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+
+    // Create a new document fragment to wrap the selected content
+    const fragment = range.cloneContents();
+    const wrapper = document.createElement("span");
+    wrapper.style.fontFamily = fontFamily;
+
+    // Append the cloned content to the new wrapper
+    wrapper.appendChild(fragment);
+
+    // Remove the old content
+    range.deleteContents();
+
+    // Insert the new wrapper with the new font
+    range.insertNode(wrapper);
+
+    // Apply the font to all descendant elements of the wrapper
+    const applyFontToDescendants = (node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        node.style.fontFamily = fontFamily;
+        node.childNodes.forEach(applyFontToDescendants);
+      }
+    };
+
+    applyFontToDescendants(wrapper);
+
+    // Remove selection
+    selection.removeAllRanges();
+
+    // Update the state with the new content
+    setEditorContent(divRef.current.innerHTML);
   };
 
   const handleImageUpload = () => {
@@ -371,8 +426,8 @@ const TextEditor = () => {
   }
 
   return (
-    <div className="text-editor">
-      <div className="toolbar">
+    <div className='text-editor'>
+      <div className='toolbar'>
         <select
           value={selectedBlock}
           onChange={(e) => changeBlockType(e.target.value)}
@@ -384,15 +439,14 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}
-        >
-          <option value="p">Paragraph</option>
-          <option value="h1">Heading 1</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-          <option value="h4">Heading 4</option>
-          <option value="h5">Heading 5</option>
-          <option value="h6">Heading 6</option>
+          }}>
+          <option value='p'>Paragraph</option>
+          <option value='h1'>Heading 1</option>
+          <option value='h2'>Heading 2</option>
+          <option value='h3'>Heading 3</option>
+          <option value='h4'>Heading 4</option>
+          <option value='h5'>Heading 5</option>
+          <option value='h6'>Heading 6</option>
         </select>
 
         <select
@@ -406,16 +460,33 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}
-        >
-          <option value="12px">12</option>
-          <option value="14px">14</option>
-          <option value="16px">16</option>
-          <option value="18px">18</option>
-          <option value="20px">20</option>
-          <option value="24px">24</option>
-          <option value="28px">28</option>
-          <option value="32px">32</option>
+          }}>
+          <option value='12px'>12</option>
+          <option value='14px'>14</option>
+          <option value='16px'>16</option>
+          <option value='18px'>18</option>
+          <option value='20px'>20</option>
+          <option value='24px'>24</option>
+          <option value='28px'>28</option>
+          <option value='32px'>32</option>
+        </select>
+
+        <select
+          value={fontFamily}
+          onChange={(e) => applyFontToSelection(e.target.value)}
+          style={{
+            padding: "10px 15px",
+            margin: "5px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+            backgroundColor: "#282c34",
+            color: "#ffffff",
+            cursor: "pointer",
+          }}>
+          <option value='Roboto'>Roboto</option>
+          <option value='Times New Roman'>Times New Roman</option>
+          <option value='Courier New'>Courier New</option>
+          <option value='verdana'>verdana</option>
         </select>
 
         <EditorButton
@@ -522,7 +593,7 @@ const TextEditor = () => {
         onInput={(e) => handleChange(e)}
       /> */}
       <ContentEditable
-        id="editor"
+        id='editor'
         innerRef={divRef}
         html={editorContent}
         disabled={false}
