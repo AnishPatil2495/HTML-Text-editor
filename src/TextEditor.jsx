@@ -114,8 +114,8 @@ const TextEditor = () => {
   };
 
   return (
-    <div className="text-editor">
-      <div className="toolbar">
+    <div className='text-editor'>
+      <div className='toolbar'>
         <EditorButton onClick={() => toggleStyle("b")} icon={icons.bold} />
         <EditorButton onClick={() => toggleStyle("i")} icon={icons.italic} />
         <EditorButton onClick={() => toggleStyle("u")} icon={icons.underline} />
@@ -123,7 +123,7 @@ const TextEditor = () => {
           onClick={() => toggleStyle("strike")}
           icon={icons.strikethrough}
         />
-        <EditorButton onClick={changeFontSize} label="Font Size" />
+        <EditorButton onClick={changeFontSize} label='Font Size' />
         <EditorButton
           onClick={() => toggleList("ul")}
           icon={icons.unorderedlist}
@@ -152,7 +152,7 @@ const TextEditor = () => {
         <EditorButton onClick={unlink} icon={icons.unlink} isActive={true} />
       </div>
       <div
-        id="editor"
+        id='editor'
         contentEditable
         dangerouslySetInnerHTML={{ __html: editorContent }}
         style={{
