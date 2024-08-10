@@ -41,8 +41,8 @@ const TextEditor = () => {
   };
 
   return (
-    <div className="text-editor">
-      <div className="toolbar">
+    <div className='text-editor'>
+      <div className='toolbar'>
         <button onClick={() => execCommand("bold")}>Bold</button>
         <button onClick={() => execCommand("italic")}>Italic</button>
         <button onClick={() => execCommand("underline")}>Underline</button>
@@ -70,9 +70,8 @@ const TextEditor = () => {
       </div>
       <div
         ref={editorRef}
-        className="editor"
-        dangerouslySetInnerHTML={{ __html: content }}
-      ></div>
+        className='editor'
+        dangerouslySetInnerHTML={{ __html: content }}></div>
     </div>
   );
 };
