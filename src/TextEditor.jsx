@@ -15,20 +15,66 @@ const TextEditor = () => {
   const [redoStack, setRedoStack] = useState([]);
   const editorRef = useRef(null);
 
+  // const applyStyle = (tag, style = {}) => {
+  //   const selection = window.getSelection();
+  //   if (!selection.rangeCount) return;
+
+  //   const range = selection.getRangeAt(0);
+  //   const selectedText = range.extractContents();
+  //   const span = document.createElement(tag);
+
+  //   Object.keys(style).forEach((key) => {
+  //     span.style[key] = style[key];
+  //   });
+
+  //   span.appendChild(selectedText);
+  //   range.insertNode(span);
+  //   setEditorContent(document.getElementById("editor").innerHTML);
+  //   window.getSelection().removeAllRanges();
+  // };
+
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
 
     const range = selection.getRangeAt(0);
     const selectedText = range.extractContents();
-    const span = document.createElement(tag);
 
-    Object.keys(style).forEach((key) => {
-      span.style[key] = style[key];
-    });
+    // Create a temporary container to hold the selected content
+    const tempDiv = document.createElement("div");
+    tempDiv.appendChild(selectedText);
 
-    span.appendChild(selectedText);
-    range.insertNode(span);
+    // Function to remove all occurrences of a specific tag recursively
+    const removeTagRecursively = (element, tagName) => {
+      const children = element.querySelectorAll(tagName);
+      children.forEach((child) => {
+        while (child.firstChild) {
+          child.parentNode.insertBefore(child.firstChild, child);
+        }
+        child.parentNode.removeChild(child);
+      });
+    };
+
+    // Check if the content is already wrapped with the tag
+    const isWrapped =
+      tempDiv.firstChild && tempDiv.firstChild.tagName === tag.toUpperCase();
+
+    if (isWrapped) {
+      // If the content is already wrapped, remove all instances of the tag
+      removeTagRecursively(tempDiv, tag.toLowerCase());
+    } else {
+      // If not wrapped, create the wrapping tag and apply styles
+      const span = document.createElement(tag);
+      Object.keys(style).forEach((key) => {
+        span.style[key] = style[key];
+      });
+      span.innerHTML = tempDiv.innerHTML;
+      tempDiv.innerHTML = "";
+      tempDiv.appendChild(span);
+    }
+
+    // Re-insert the processed content
+    range.insertNode(tempDiv.firstChild);
     setEditorContent(document.getElementById("editor").innerHTML);
     window.getSelection().removeAllRanges();
   };
@@ -426,8 +472,8 @@ const TextEditor = () => {
   }
 
   return (
-    <div className='text-editor'>
-      <div className='toolbar'>
+    <div className="text-editor">
+      <div className="toolbar">
         <select
           value={selectedBlock}
           onChange={(e) => changeBlockType(e.target.value)}
@@ -439,14 +485,15 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}>
-          <option value='p'>Paragraph</option>
-          <option value='h1'>Heading 1</option>
-          <option value='h2'>Heading 2</option>
-          <option value='h3'>Heading 3</option>
-          <option value='h4'>Heading 4</option>
-          <option value='h5'>Heading 5</option>
-          <option value='h6'>Heading 6</option>
+          }}
+        >
+          <option value="p">Paragraph</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="h4">Heading 4</option>
+          <option value="h5">Heading 5</option>
+          <option value="h6">Heading 6</option>
         </select>
 
         <select
@@ -460,15 +507,16 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}>
-          <option value='12px'>12</option>
-          <option value='14px'>14</option>
-          <option value='16px'>16</option>
-          <option value='18px'>18</option>
-          <option value='20px'>20</option>
-          <option value='24px'>24</option>
-          <option value='28px'>28</option>
-          <option value='32px'>32</option>
+          }}
+        >
+          <option value="12px">12</option>
+          <option value="14px">14</option>
+          <option value="16px">16</option>
+          <option value="18px">18</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="28px">28</option>
+          <option value="32px">32</option>
         </select>
 
         <select
@@ -482,11 +530,12 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}>
-          <option value='Roboto'>Roboto</option>
-          <option value='Times New Roman'>Times New Roman</option>
-          <option value='Courier New'>Courier New</option>
-          <option value='verdana'>verdana</option>
+          }}
+        >
+          <option value="Roboto">Roboto</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+          <option value="verdana">verdana</option>
         </select>
 
         <EditorButton
@@ -593,7 +642,7 @@ const TextEditor = () => {
         onInput={(e) => handleChange(e)}
       /> */}
       <ContentEditable
-        id='editor'
+        id="editor"
         innerRef={divRef}
         html={editorContent}
         disabled={false}
@@ -603,8 +652,8 @@ const TextEditor = () => {
           padding: "10px",
           minHeight: "100px",
           textAlign: "left",
-          display: "flex",
-          flexDirection: "column",
+          // display: "flex",
+          // flexDirection: "column",
         }}
       />
     </div>
