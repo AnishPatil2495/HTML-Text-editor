@@ -3,7 +3,6 @@ import "./TextEditor.css";
 import { EditorButton } from "./components/button/button";
 import { icons } from "./assets";
 import ContentEditable from "./ContentEditable";
-import DOMPurify from "dompurify";
 
 const CodeView = ({ content, onChange }) => {
   return (
@@ -31,13 +30,13 @@ const CodeView = ({ content, onChange }) => {
   );
 };
 
-
 const TextEditor = () => {
   const divRef = useRef(null);
   const [activeCommands, setActiveCommands] = useState([]);
   const [editorContent, setEditorContent] = useState("");
   const [selectedBlock, setSelectedBlock] = useState("p");
   const [fontSize, setFontSize] = useState("24px");
+  const [fontFamily, setFontFamily] = useState("Roboto");
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
   const [codeView, setCodeView] = useState(false);
@@ -86,12 +85,15 @@ const TextEditor = () => {
       setEditorContent(document.getElementById("editor").innerHTML);
     }
   };
+
   const toggleStyle = (tag, style = {}) => {
     setActiveCommands((prevCommands) => {
       const isActive = prevCommands.includes(tag);
-      return isActive
-        ? prevCommands.filter((cmd) => cmd !== tag)
-        : [...prevCommands, tag];
+      if (isActive) {
+        return prevCommands.filter((cmd) => cmd !== tag);
+      } else {
+        return [...prevCommands, tag];
+      }
     });
 
     const selection = window.getSelection();
@@ -113,9 +115,11 @@ const TextEditor = () => {
   const toggleList = (listType) => {
     setActiveCommands((prevCommands) => {
       const isActive = prevCommands.includes(listType);
-      return isActive
-        ? prevCommands.filter((cmd) => cmd !== listType)
-        : [...prevCommands, listType];
+      if (isActive) {
+        return prevCommands.filter((cmd) => cmd !== listType);
+      } else {
+        return [...prevCommands, listType];
+      }
     });
 
     const selection = window.getSelection();
@@ -125,6 +129,7 @@ const TextEditor = () => {
     const parent = selection.anchorNode.parentNode;
 
     if (parent.tagName === listType) {
+      // Unwrap the list item
       const list = parent.parentNode;
       const fragment = document.createDocumentFragment();
       while (list.firstChild) {
@@ -132,6 +137,7 @@ const TextEditor = () => {
       }
       list.parentNode.replaceChild(fragment, list);
     } else {
+      // Wrap selected text in a list
       const list = document.createElement(listType);
       const listItem = document.createElement("li");
       listItem.appendChild(range.extractContents());
@@ -142,14 +148,49 @@ const TextEditor = () => {
   };
 
   const justifyText = (alignment) => {
+    const commandMap = {
+      left: "justifyLeft",
+      center: "justifyCenter",
+      right: "justifyRight",
+      justify: "justify",
+    };
+
+    // Check if the alignment is already active
+    const isActive = activeCommands.includes(commandMap[alignment]);
+
+    // Clear previous alignment commands
     setActiveCommands((prevCommands) => {
-      const isActive = prevCommands.includes(alignment);
+      const cleanedCommands = prevCommands.filter(
+        (cmd) =>
+          cmd !== "justifyLeft" &&
+          cmd !== "justifyCenter" &&
+          cmd !== "justifyRight" &&
+          cmd !== "justify"
+      );
+
+      // If the alignment was active, toggle it off, otherwise add the new alignment
       return isActive
-        ? prevCommands.filter((cmd) => cmd !== alignment)
-        : [...prevCommands, alignment];
+        ? cleanedCommands
+        : [...cleanedCommands, commandMap[alignment]];
     });
 
-    toggleStyle("div", { textAlign: alignment });
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const parent = selection.anchorNode.parentNode;
+
+    if (isActive) {
+      // If the alignment is active, toggle it off by resetting the text alignment
+      if (parent && parent.style.textAlign === alignment) {
+        parent.style.textAlign = "";
+      }
+      return;
+    }
+
+    // Apply the new alignment
+    parent.style.textAlign = alignment;
+    setEditorContent(document.getElementById("editor").innerHTML);
   };
 
   const createLink = () => {
@@ -157,7 +198,6 @@ const TextEditor = () => {
     if (!url) return;
 
     setActiveCommands((prevCommands) => [...prevCommands, "a"]);
-
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
 
@@ -187,14 +227,32 @@ const TextEditor = () => {
     if (!selection.rangeCount) return;
 
     const range = selection.getRangeAt(0);
-    const parent = selection.anchorNode.parentNode;
+    let parent = selection.anchorNode.parentNode;
 
-    const newBlock = document.createElement(blockType);
-    newBlock.appendChild(range.extractContents());
-    range.insertNode(newBlock);
+    // Check if the current parent is a block element (e.g., P, H1, H2, etc.)
+    if (["P", "H1", "H2", "H3", "H4", "H5", "H6"].includes(parent.tagName)) {
+      // Replace the existing block element with the new block type
+      const newBlock = document.createElement(blockType);
 
+      // Move all children from the old block to the new block
+      while (parent.firstChild) {
+        newBlock.appendChild(parent.firstChild);
+      }
+
+      // Replace the old block with the new block
+      parent.parentNode.replaceChild(newBlock, parent);
+      parent = newBlock; // Update the parent reference to the new block
+    } else {
+      // If the parent is not a block element, create a new block and insert it
+      const newBlock = document.createElement(blockType);
+      newBlock.appendChild(range.extractContents());
+      range.insertNode(newBlock);
+      parent = newBlock;
+    }
+
+    // Adjust the selection to include the new block
     const newRange = document.createRange();
-    newRange.selectNodeContents(newBlock);
+    newRange.selectNodeContents(parent);
     selection.removeAllRanges();
     selection.addRange(newRange);
 
@@ -250,10 +308,9 @@ const TextEditor = () => {
       if (cmd) activeCmds.push(cmd);
     }
 
-    setActiveCommands((prevCommands) => {
-      return [...new Set([...prevCommands, ...activeCmds])];
-    });
+    setActiveCommands(activeCmds);
 
+    // Set the selected block type (p, h1, h2, etc.) only if it has changed
     if (["P", "H1", "H2", "H3", "H4", "H5", "H6"].includes(tagName)) {
       setSelectedBlock((prevBlock) => {
         return prevBlock !== tagName.toLowerCase()
@@ -261,6 +318,44 @@ const TextEditor = () => {
           : prevBlock;
       });
     }
+  };
+
+  const applyFontToSelection = (fontFamily) => {
+    setFontFamily(fontFamily);
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+
+    // Create a new document fragment to wrap the selected content
+    const fragment = range.cloneContents();
+    const wrapper = document.createElement("span");
+    wrapper.style.fontFamily = fontFamily;
+
+    // Append the cloned content to the new wrapper
+    wrapper.appendChild(fragment);
+
+    // Remove the old content
+    range.deleteContents();
+
+    // Insert the new wrapper with the new font
+    range.insertNode(wrapper);
+
+    // Apply the font to all descendant elements of the wrapper
+    const applyFontToDescendants = (node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        node.style.fontFamily = fontFamily;
+        node.childNodes.forEach(applyFontToDescendants);
+      }
+    };
+
+    applyFontToDescendants(wrapper);
+
+    // Remove selection
+    selection.removeAllRanges();
+
+    // Update the state with the new content
+    setEditorContent(divRef.current.innerHTML);
   };
 
   const handleImageUpload = () => {
@@ -275,27 +370,31 @@ const TextEditor = () => {
       reader.onload = () => {
         const url = reader.result;
 
+        // Create an image element
         const img = document.createElement("img");
         img.src = url;
-        img.style.maxWidth = "100%";
+        img.style.maxWidth = "100%"; // Ensure the image fits within the editor
 
+        // Prevent image from being removed on click
         img.addEventListener("mousedown", (event) => {
           event.preventDefault();
         });
 
+        // Insert the image at the current selection or at the end of the editor
         const editor = divRef.current;
 
         if (editor) {
           const selection = window.getSelection();
           if (selection.rangeCount > 0) {
             const range = selection.getRangeAt(0);
-            range.deleteContents();
+            range.deleteContents(); // Remove any selected content
             range.insertNode(img);
-            range.collapse(false);
+            range.collapse(false); // Ensure cursor is placed after the image
           } else {
             editor.appendChild(img);
           }
 
+          // Move cursor to the end after inserting image
           const newRange = document.createRange();
           const newSelection = window.getSelection();
           newRange.selectNodeContents(editor);
@@ -396,8 +495,8 @@ const TextEditor = () => {
   }, [codeView]);
 
   return (
-    <div className='text-editor'>
-      <div className='toolbar'>
+    <div className="text-editor">
+      <div className="toolbar">
         <select
           value={selectedBlock}
           onChange={(e) => changeBlockType(e.target.value)}
@@ -409,14 +508,15 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}>
-          <option value='p'>Paragraph</option>
-          <option value='h1'>Heading 1</option>
-          <option value='h2'>Heading 2</option>
-          <option value='h3'>Heading 3</option>
-          <option value='h4'>Heading 4</option>
-          <option value='h5'>Heading 5</option>
-          <option value='h6'>Heading 6</option>
+          }}
+        >
+          <option value="p">Paragraph</option>
+          <option value="h1">Heading 1</option>
+          <option value="h2">Heading 2</option>
+          <option value="h3">Heading 3</option>
+          <option value="h4">Heading 4</option>
+          <option value="h5">Heading 5</option>
+          <option value="h6">Heading 6</option>
         </select>
 
         <select
@@ -430,91 +530,139 @@ const TextEditor = () => {
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
-          }}>
-          <option value='12px'>12</option>
-          <option value='14px'>14</option>
-          <option value='16px'>16</option>
-          <option value='18px'>18</option>
-          <option value='20px'>20</option>
-          <option value='24px'>24</option>
-          <option value='28px'>28</option>
-          <option value='32px'>32</option>
+          }}
+        >
+          <option value="12px">12</option>
+          <option value="14px">14</option>
+          <option value="16px">16</option>
+          <option value="18px">18</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="28px">28</option>
+          <option value="32px">32</option>
+        </select>
+
+        <select
+          value={fontFamily}
+          onChange={(e) => applyFontToSelection(e.target.value)}
+          style={{
+            padding: "10px 15px",
+            margin: "5px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+            backgroundColor: "#282c34",
+            color: "#ffffff",
+            cursor: "pointer",
+          }}
+        >
+          <option value="Roboto">Roboto</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+          <option value="verdana">verdana</option>
         </select>
 
         <EditorButton
           onClick={() => toggleStyle("b")}
           icon={icons.bold}
           isActive={activeCommands.includes("b")}
+          title="Bold"
         />
         <EditorButton
           onClick={() => toggleStyle("i")}
           icon={icons.italic}
           isActive={activeCommands.includes("i")}
+          title="Italic"
         />
         <EditorButton
           onClick={() => toggleStyle("u")}
           icon={icons.underline}
           isActive={activeCommands.includes("u")}
+          title="Underline"
         />
         <EditorButton
           onClick={() => toggleStyle("strike")}
           icon={icons.strikethrough}
           isActive={activeCommands.includes("strike")}
+          title="Strikethrough"
         />
         <EditorButton
           onClick={() => toggleList("ul")}
           icon={icons.unorderedlist}
           isActive={activeCommands.includes("ul")}
+          title="Unordered List"
         />
         <EditorButton
           onClick={() => toggleList("ol")}
           icon={icons.orderedlist}
           isActive={activeCommands.includes("ol")}
+          title="Ordered List"
         />
         <EditorButton
           onClick={() => justifyText("left")}
           icon={icons.alignLeft}
           isActive={activeCommands.includes("justifyLeft")}
+          title="Align Left"
         />
         <EditorButton
           onClick={() => justifyText("center")}
           icon={icons.alightCenter}
           isActive={activeCommands.includes("justifyCenter")}
+          title="Align Center"
         />
         <EditorButton
           onClick={() => justifyText("right")}
           icon={icons.alignRight}
           isActive={activeCommands.includes("justifyRight")}
+          title="Align Right"
         />
         <EditorButton
           onClick={() => justifyText("justify")}
           icon={icons.alignJustify}
           isActive={activeCommands.includes("justify")}
+          title="Justify"
         />
         <EditorButton
           onClick={createLink}
           icon={icons.link}
           isActive={activeCommands.includes("a")}
+          title="Insert Link"
         />
-        <EditorButton onClick={unlink} icon={icons.unlink} isActive={false} />
-        <EditorButton onClick={undo} icon={icons.undo} isActive={false} />
-        <EditorButton onClick={redo} icon={icons.redo} isActive={false} />
         <EditorButton
-          onClick={toggleCodeView}
-          icon={icons.code}
-          isActive={codeView}
+          onClick={unlink}
+          icon={icons.unlink}
+          isActive={false} // Unlink is never active initially
+          title="Remove Link"
         />
+        <EditorButton
+          onClick={undo}
+          icon={icons.undo}
+          isActive={false} // Undo is never active initially
+          title="Undo"
+        />
+        <EditorButton
+          onClick={redo}
+          icon={icons.redo}
+          isActive={false} // Redo is never active initially
+          title="Redo"
+        />
+
         <EditorButton
           onClick={handleImageUpload}
           icon={icons.imageUpload}
           isActive={false}
+          title="Insert Image"
+        />
+        <EditorButton
+          onClick={toggleCodeView}
+          icon={icons.code}
+          isActive={codeView}
         />
       </div>
       {codeView ? (
         <CodeView content={editorContent} onChange={handleChange} />
       ) : (
         <ContentEditable
-          id='editor'
+          id="editor"
           innerRef={divRef}
           html={decodeHtml(editorContent)}
           disabled={false}
@@ -528,12 +676,6 @@ const TextEditor = () => {
       )}
     </div>
   );
-};
-
-const decodeHtml = (html) => {
-  const txt = document.createElement("textarea");
-  txt.innerHTML = html;
-  return txt.value;
 };
 
 export default TextEditor;
