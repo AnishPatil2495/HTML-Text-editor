@@ -10,7 +10,7 @@ const CodeView = ({ content, onChange }) => {
     <textarea
       value={content}
       onChange={(e) => onChange(e)}
-      className='codeview'
+      className="codeview"
     />
   );
 };
@@ -34,26 +34,6 @@ const TextEditor = () => {
 
   const [selectedColor, setSelectedColor] = useState("#ffffff");
 
-  // const applyStyle = (tag, style = {}) => {
-  //   const selection = window.getSelection();
-  //   if (!selection.rangeCount) return;
-
-  //   const range = selection.getRangeAt(0);
-  //   const selectedText = range.extractContents();
-  //   const span = document.createElement(tag);
-
-  //   Object.keys(style).forEach((key) => {
-  //     span.style[key] = style[key];
-  //   });
-
-  //   span.appendChild(selectedText);
-  //   range.insertNode(span);
-  //   setEditorContent(document.getElementById("editor").innerHTML);
-  //   // window.getSelection().removeAllRanges();
-  // };
-  // console.log("editorContent", editorContent);
-
-  // Function to apply a style or tag to the selected text
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
@@ -189,54 +169,6 @@ const TextEditor = () => {
       list.appendChild(listItem);
       range.insertNode(list);
     }
-    setEditorContent(document.getElementById("editor").innerHTML);
-  };
-
-  const justifyText = (alignment) => {
-    const commandMap = {
-      left: "justifyLeft",
-      center: "justifyCenter",
-      right: "justifyRight",
-      justify: "justify",
-    };
-
-    // Check if the alignment is already active
-    const isActive = activeCommands.includes(commandMap[alignment]);
-
-    // Clear previous alignment commands
-    setActiveCommands((prevCommands) => {
-      const cleanedCommands = prevCommands.filter(
-        (cmd) =>
-          cmd !== "justifyLeft" &&
-          cmd !== "justifyCenter" &&
-          cmd !== "justifyRight" &&
-          cmd !== "justify"
-      );
-
-      // If the alignment was active, toggle it off, otherwise add the new alignment
-      return isActive
-        ? cleanedCommands
-        : [...cleanedCommands, commandMap[alignment]];
-    });
-
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
-
-    const range = selection.getRangeAt(0);
-    const parent = selection.anchorNode.parentNode;
-    console.log("Justify text reset called outside", parent, selection);
-
-    if (isActive) {
-      // If the alignment is active, toggle it off by resetting the text alignment
-      console.log("Justify text reset called", parent, selection);
-      if (parent && parent.style.textAlign === alignment) {
-        parent.style.textAlign = "";
-      }
-      return;
-    }
-
-    // Apply the new alignment
-    parent.style.textAlign = alignment;
     setEditorContent(document.getElementById("editor").innerHTML);
   };
 
@@ -563,126 +495,138 @@ const TextEditor = () => {
     }
   }, [codeView]);
 
-  function replaceCaret(el) {
-    // Place the caret at the end of the element
-    var target = document.createTextNode("");
-    el.appendChild(target);
-    // do not move caret if element was not focused
-    var isTargetFocused = document.activeElement === el;
-    if (target !== null && target.nodeValue !== null && isTargetFocused) {
-      var sel = window.getSelection();
-      if (sel !== null) {
-        var range = document.createRange();
-        range.setStart(target, target.nodeValue.length);
-        range.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
-      if (el instanceof HTMLElement) el.focus();
-    }
-  }
+  const execCommand = (command) => {
+    const commandMap = [
+      "justifyLeft",
+      "justifyCenter",
+      "justifyRight",
+      "justifyFull",
+    ];
+
+    // Check if the alignment is already active
+    const isActive = activeCommands.includes(command);
+
+    // Clear previous alignment commands
+    setActiveCommands((prevCommands) => {
+      const cleanedCommands = prevCommands.filter(
+        (cmd) =>
+          cmd !== "justifyLeft" &&
+          cmd !== "justifyCenter" &&
+          cmd !== "justifyRight" &&
+          cmd !== "justifyFull"
+      );
+
+      // If the alignment was active, toggle it off, otherwise add the new alignment
+      return isActive ? cleanedCommands : [...cleanedCommands, command];
+    });
+    document.execCommand(command, false, null);
+  };
 
   return (
-    <div className='text-editor'>
-      <div className='toolbar'>
-        <div className='toolbar-buttons'>
-          <div className='buttons'>
+    <div className="text-editor">
+      <div className="toolbar">
+        <div className="toolbar-buttons">
+          <div
+            className="buttons"
+            style={{ display: `${codeView ? "none" : "flex"}` }}
+          >
             <EditorButton
               onClick={() => toggleStyle("b")}
               icon={icons.bold}
               isActive={activeCommands.includes("b")}
-              title='Bold'
+              title="Bold"
             />
             <EditorButton
               onClick={() => toggleStyle("i")}
               icon={icons.italic}
               isActive={activeCommands.includes("i")}
-              title='Italic'
+              title="Italic"
             />
             <EditorButton
               onClick={() => toggleStyle("u")}
               icon={icons.underline}
               isActive={activeCommands.includes("u")}
-              title='Underline'
+              title="Underline"
             />
             <EditorButton
               onClick={() => toggleStyle("strike")}
               icon={icons.strikethrough}
               isActive={activeCommands.includes("strike")}
-              title='Strikethrough'
+              title="Strikethrough"
             />
             <EditorButton
               onClick={() => toggleList("ul")}
               icon={icons.unorderedlist}
               isActive={activeCommands.includes("ul")}
-              title='Unordered List'
+              title="Unordered List"
             />
             <EditorButton
               onClick={() => toggleList("ol")}
               icon={icons.orderedlist}
               isActive={activeCommands.includes("ol")}
-              title='Ordered List'
+              title="Ordered List"
             />
             <EditorButton
-              onClick={() => justifyText("left")}
+              onClick={() => execCommand("justifyLeft")}
               icon={icons.alignLeft}
               isActive={activeCommands.includes("justifyLeft")}
-              title='Align Left'
+              title="Align Left"
             />
             <EditorButton
-              onClick={() => justifyText("center")}
+              onClick={() => execCommand("justifyCenter")}
               icon={icons.alightCenter}
               isActive={activeCommands.includes("justifyCenter")}
-              title='Align Center'
+              title="Align Center"
             />
             <EditorButton
-              onClick={() => justifyText("right")}
+              onClick={() => execCommand("justifyRight")}
               icon={icons.alignRight}
               isActive={activeCommands.includes("justifyRight")}
-              title='Align Right'
+              title="Align Right"
             />
             <EditorButton
-              onClick={() => justifyText("justify")}
+              onClick={() => execCommand("justifyFull")}
               icon={icons.alignJustify}
-              isActive={activeCommands.includes("justify")}
-              title='Justify'
+              isActive={activeCommands.includes("justifyFull")}
+              title="Justify"
             />
             <EditorButton
               onClick={createLink}
               icon={icons.link}
               isActive={activeCommands.includes("a")}
-              title='Insert Link'
+              title="Insert Link"
             />
             <EditorButton
               onClick={unlink}
               icon={icons.unlink}
               isActive={false} // Unlink is never active initially
-              title='Remove Link'
+              title="Remove Link"
             />
             <EditorButton
               onClick={undo}
               icon={icons.undo}
               isActive={false} // Undo is never active initially
-              title='Undo'
+              title="Undo"
             />
             <EditorButton
               onClick={redo}
               icon={icons.redo}
               isActive={false} // Redo is never active initially
-              title='Redo'
+              title="Redo"
             />
 
             <EditorButton
               onClick={handleImageUpload}
               icon={icons.imageUpload}
               isActive={false}
-              title='Insert Image'
+              title="Insert Image"
             />
           </div>
           <div
             style={{
               marginLeft: "auto",
-            }}>
+            }}
+          >
             <EditorButton
               onClick={toggleCodeView}
               icon={icons.code}
@@ -691,47 +635,53 @@ const TextEditor = () => {
           </div>
         </div>
 
-        <div className='toolbar-selects'>
+        <div
+          className="toolbar-selects"
+          style={{ display: `${codeView ? "none" : "flex"}` }}
+        >
           <select
             value={selectedBlock}
             onChange={(e) => changeBlockType(e.target.value)}
-            className='action-selects'>
-            <option value='p'>Paragraph</option>
-            <option value='h1'>Heading 1</option>
-            <option value='h2'>Heading 2</option>
-            <option value='h3'>Heading 3</option>
-            <option value='h4'>Heading 4</option>
-            <option value='h5'>Heading 5</option>
-            <option value='h6'>Heading 6</option>
+            className="action-selects"
+          >
+            <option value="p">Paragraph</option>
+            <option value="h1">Heading 1</option>
+            <option value="h2">Heading 2</option>
+            <option value="h3">Heading 3</option>
+            <option value="h4">Heading 4</option>
+            <option value="h5">Heading 5</option>
+            <option value="h6">Heading 6</option>
           </select>
 
           <select
             value={fontSize}
             onChange={(e) => changeFontSize(e.target.value)}
-            className='action-selects'>
-            <option value='12px'>12</option>
-            <option value='14px'>14</option>
-            <option value='16px'>16</option>
-            <option value='18px'>18</option>
-            <option value='20px'>20</option>
-            <option value='24px'>24</option>
-            <option value='28px'>28</option>
-            <option value='32px'>32</option>
+            className="action-selects"
+          >
+            <option value="12px">12</option>
+            <option value="14px">14</option>
+            <option value="16px">16</option>
+            <option value="18px">18</option>
+            <option value="20px">20</option>
+            <option value="24px">24</option>
+            <option value="28px">28</option>
+            <option value="32px">32</option>
           </select>
 
           <select
             value={fontFamily}
             onChange={(e) => applyFontToSelection(e.target.value)}
-            className='action-selects'>
-            <option value='Roboto'>Roboto</option>
-            <option value='Times New Roman'>Times New Roman</option>
-            <option value='Courier New'>Courier New</option>
-            <option value='verdana'>verdana</option>
+            className="action-selects"
+          >
+            <option value="Roboto">Roboto</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+            <option value="verdana">verdana</option>
           </select>
 
-          <div className='action-selects'>
+          <div className="action-selects">
             <input
-              type='color'
+              type="color"
               value={selectedColor}
               onChange={(e) => applyColor(e.target.value)}
               style={{
@@ -750,7 +700,7 @@ const TextEditor = () => {
         <CodeView content={editorContent} onChange={handleChange} />
       ) : (
         <ContentEditable
-          id='editor'
+          id="editor"
           innerRef={divRef}
           html={decodeHtml(editorContent)}
           disabled={false}

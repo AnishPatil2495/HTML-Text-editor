@@ -1,9 +1,16 @@
 import React from "react";
 
-export const EditorButton = ({ onClick, icon, label, isActive, title }) => {
+export const EditorButton = ({
+  onClick,
+  icon,
+  label,
+  isActive,
+  title,
+  isDisabled,
+}) => {
   return (
     <button
-      className='action-buttons'
+      className="action-buttons"
       style={{
         // padding: "10px 15px",
         // width: "24px",
@@ -21,7 +28,8 @@ export const EditorButton = ({ onClick, icon, label, isActive, title }) => {
         borderColor: isActive ? "white" : "",
       }}
       onClick={onClick}
-      title={title}>
+      title={title}
+    >
       {icon && <span>{icon}</span>}
       {label}
     </button>
