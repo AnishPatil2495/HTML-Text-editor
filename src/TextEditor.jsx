@@ -17,10 +17,20 @@ const CodeView = ({ content, onChange }) => {
         border: "1px solid #ccc",
         fontFamily: "monospace",
         fontSize: "14px",
+        backgroundColor: "#2d2d2d",
+        color: "#ffffff",
+        lineHeight: "1.5",
+        whiteSpace: "pre",
+        overflow: "auto",
+        caretColor: "#ffffff",
+        outline: "none",
+        resize: "none",
+        borderRadius: "4px",
       }}
     />
   );
 };
+
 
 const TextEditor = () => {
   const divRef = useRef(null);
