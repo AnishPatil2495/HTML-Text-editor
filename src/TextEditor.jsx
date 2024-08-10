@@ -3,6 +3,7 @@ import "./TextEditor.css";
 import { EditorButton } from "./components/button/button";
 import { icons } from "./assets";
 import ContentEditable from "./ContentEditable";
+import DOMPurify from "dompurify";
 
 const CodeView = ({ content, onChange }) => {
   return (
@@ -28,6 +29,12 @@ const CodeView = ({ content, onChange }) => {
       }}
     />
   );
+};
+
+const decodeHtml = (html) => {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
 };
 
 const TextEditor = () => {
