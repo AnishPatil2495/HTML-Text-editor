@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./TextEditor.css";
 
+import { EditorButton } from "./components/button/button";
+
+import { icons } from "./assets";
+
 export const maintainCaretPosition = (event) => {
   const caret = event.target.selectionStart;
   const element = event.target;
@@ -110,21 +114,46 @@ const TextEditor = () => {
   };
 
   return (
-    <div>
-      <div>
-        <button onClick={() => toggleStyle("b")}>Bold</button>
-        <button onClick={() => toggleStyle("i")}>Italic</button>
-        <button onClick={() => toggleStyle("u")}>Underline</button>
-        <button onClick={() => toggleStyle("strike")}>Strikethrough</button>
-        <button onClick={changeFontSize}>Font Size</button>
-        <button onClick={() => toggleList("ul")}>Unordered List</button>
-        <button onClick={() => toggleList("ol")}>Ordered List</button>
-        <button onClick={() => justifyText("left")}>Left Align</button>
-        <button onClick={() => justifyText("center")}>Center Align</button>
-        <button onClick={() => justifyText("right")}>Right Align</button>
-        <button onClick={() => justifyText("justify")}>Justify</button>
-        <button onClick={createLink}>Create Link</button>
-        <button onClick={unlink}>Unlink</button>
+    <div className="text-editor">
+      <div className="toolbar">
+        <EditorButton onClick={() => toggleStyle("b")} icon={icons.bold} />
+        <EditorButton onClick={() => toggleStyle("i")} icon={icons.italic} />
+        <EditorButton onClick={() => toggleStyle("u")} icon={icons.underline} />
+        <EditorButton
+          onClick={() => toggleStyle("u")}
+          icon={icons.strikethrough}
+        />
+        <EditorButton onClick={changeFontSize} label="Font Size" />
+        <EditorButton
+          onClick={() => execCommandWithValue("formatBlock", "h2")}
+          label="H2"
+        />
+        <EditorButton
+          onClick={() => toggleList("ul")}
+          icon={icons.unorderedlist}
+        />
+        <EditorButton
+          onClick={() => toggleList("ol")}
+          icon={icons.orderedlist}
+        />
+        <EditorButton
+          onClick={() => justifyText("left")}
+          icon={icons.alignLeft}
+        />
+        <EditorButton
+          onClick={() => justifyText("center")}
+          icon={icons.alightCenter}
+        />
+        <EditorButton
+          onClick={() => justifyText("right")}
+          icon={icons.alignRight}
+        />
+        <EditorButton
+          onClick={() => justifyText("justify")}
+          icon={icons.alignJustify}
+        />
+        <EditorButton onClick={createLink} icon={icons.link} />
+        <EditorButton onClick={unlink} icon={icons.unlink} isActive={true} />
       </div>
       <div
         id="editor"
