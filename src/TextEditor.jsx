@@ -586,102 +586,109 @@ const TextEditor = () => {
     <div className='text-editor'>
       <div className='toolbar'>
         <div className='toolbar-buttons'>
-          <EditorButton
-            onClick={() => toggleStyle("b")}
-            icon={icons.bold}
-            isActive={activeCommands.includes("b")}
-            title='Bold'
-          />
-          <EditorButton
-            onClick={() => toggleStyle("i")}
-            icon={icons.italic}
-            isActive={activeCommands.includes("i")}
-            title='Italic'
-          />
-          <EditorButton
-            onClick={() => toggleStyle("u")}
-            icon={icons.underline}
-            isActive={activeCommands.includes("u")}
-            title='Underline'
-          />
-          <EditorButton
-            onClick={() => toggleStyle("strike")}
-            icon={icons.strikethrough}
-            isActive={activeCommands.includes("strike")}
-            title='Strikethrough'
-          />
-          <EditorButton
-            onClick={() => toggleList("ul")}
-            icon={icons.unorderedlist}
-            isActive={activeCommands.includes("ul")}
-            title='Unordered List'
-          />
-          <EditorButton
-            onClick={() => toggleList("ol")}
-            icon={icons.orderedlist}
-            isActive={activeCommands.includes("ol")}
-            title='Ordered List'
-          />
-          <EditorButton
-            onClick={() => justifyText("left")}
-            icon={icons.alignLeft}
-            isActive={activeCommands.includes("justifyLeft")}
-            title='Align Left'
-          />
-          <EditorButton
-            onClick={() => justifyText("center")}
-            icon={icons.alightCenter}
-            isActive={activeCommands.includes("justifyCenter")}
-            title='Align Center'
-          />
-          <EditorButton
-            onClick={() => justifyText("right")}
-            icon={icons.alignRight}
-            isActive={activeCommands.includes("justifyRight")}
-            title='Align Right'
-          />
-          <EditorButton
-            onClick={() => justifyText("justify")}
-            icon={icons.alignJustify}
-            isActive={activeCommands.includes("justify")}
-            title='Justify'
-          />
-          <EditorButton
-            onClick={createLink}
-            icon={icons.link}
-            isActive={activeCommands.includes("a")}
-            title='Insert Link'
-          />
-          <EditorButton
-            onClick={unlink}
-            icon={icons.unlink}
-            isActive={false} // Unlink is never active initially
-            title='Remove Link'
-          />
-          <EditorButton
-            onClick={undo}
-            icon={icons.undo}
-            isActive={false} // Undo is never active initially
-            title='Undo'
-          />
-          <EditorButton
-            onClick={redo}
-            icon={icons.redo}
-            isActive={false} // Redo is never active initially
-            title='Redo'
-          />
+          <div className='buttons'>
+            <EditorButton
+              onClick={() => toggleStyle("b")}
+              icon={icons.bold}
+              isActive={activeCommands.includes("b")}
+              title='Bold'
+            />
+            <EditorButton
+              onClick={() => toggleStyle("i")}
+              icon={icons.italic}
+              isActive={activeCommands.includes("i")}
+              title='Italic'
+            />
+            <EditorButton
+              onClick={() => toggleStyle("u")}
+              icon={icons.underline}
+              isActive={activeCommands.includes("u")}
+              title='Underline'
+            />
+            <EditorButton
+              onClick={() => toggleStyle("strike")}
+              icon={icons.strikethrough}
+              isActive={activeCommands.includes("strike")}
+              title='Strikethrough'
+            />
+            <EditorButton
+              onClick={() => toggleList("ul")}
+              icon={icons.unorderedlist}
+              isActive={activeCommands.includes("ul")}
+              title='Unordered List'
+            />
+            <EditorButton
+              onClick={() => toggleList("ol")}
+              icon={icons.orderedlist}
+              isActive={activeCommands.includes("ol")}
+              title='Ordered List'
+            />
+            <EditorButton
+              onClick={() => justifyText("left")}
+              icon={icons.alignLeft}
+              isActive={activeCommands.includes("justifyLeft")}
+              title='Align Left'
+            />
+            <EditorButton
+              onClick={() => justifyText("center")}
+              icon={icons.alightCenter}
+              isActive={activeCommands.includes("justifyCenter")}
+              title='Align Center'
+            />
+            <EditorButton
+              onClick={() => justifyText("right")}
+              icon={icons.alignRight}
+              isActive={activeCommands.includes("justifyRight")}
+              title='Align Right'
+            />
+            <EditorButton
+              onClick={() => justifyText("justify")}
+              icon={icons.alignJustify}
+              isActive={activeCommands.includes("justify")}
+              title='Justify'
+            />
+            <EditorButton
+              onClick={createLink}
+              icon={icons.link}
+              isActive={activeCommands.includes("a")}
+              title='Insert Link'
+            />
+            <EditorButton
+              onClick={unlink}
+              icon={icons.unlink}
+              isActive={false} // Unlink is never active initially
+              title='Remove Link'
+            />
+            <EditorButton
+              onClick={undo}
+              icon={icons.undo}
+              isActive={false} // Undo is never active initially
+              title='Undo'
+            />
+            <EditorButton
+              onClick={redo}
+              icon={icons.redo}
+              isActive={false} // Redo is never active initially
+              title='Redo'
+            />
 
-          <EditorButton
-            onClick={handleImageUpload}
-            icon={icons.imageUpload}
-            isActive={false}
-            title='Insert Image'
-          />
-          <EditorButton
-            onClick={toggleCodeView}
-            icon={icons.code}
-            isActive={codeView}
-          />
+            <EditorButton
+              onClick={handleImageUpload}
+              icon={icons.imageUpload}
+              isActive={false}
+              title='Insert Image'
+            />
+          </div>
+          <div
+            style={{
+              marginLeft: "auto",
+            }}>
+            <EditorButton
+              onClick={toggleCodeView}
+              icon={icons.code}
+              isActive={codeView}
+            />
+          </div>
         </div>
 
         <div className='toolbar-selects'>

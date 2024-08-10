@@ -23,6 +23,13 @@
   display: flex;
   column-gap: 16px;
   flex-wrap: wrap;
+  row-gap: 16px;
+}
+
+.buttons {
+  display: flex;
+  column-gap: 16px;
+  flex-wrap: wrap;
 }
 
 #editor {
