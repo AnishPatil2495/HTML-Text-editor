@@ -12,7 +12,6 @@ const TextEditor = () => {
   const [fontSize, setFontSize] = useState("24px");
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
-  const [isRemoving, setIsRemoving] = useState(false);
   const editorRef = useRef(null);
 
   const applyStyle = (tag, style = {}) => {
@@ -122,15 +121,49 @@ const TextEditor = () => {
   };
 
   const justifyText = (alignment) => {
+    const commandMap = {
+      left: "justifyLeft",
+      center: "justifyCenter",
+      right: "justifyRight",
+      justify: "justify",
+    };
+
+    // Check if the alignment is already active
+    const isActive = activeCommands.includes(commandMap[alignment]);
+
+    // Clear previous alignment commands
     setActiveCommands((prevCommands) => {
-      const isActive = prevCommands.includes(alignment);
-      if (isActive) {
-        return prevCommands.filter((cmd) => cmd !== alignment);
-      } else {
-        return [...prevCommands, alignment];
-      }
+      const cleanedCommands = prevCommands.filter(
+        (cmd) =>
+          cmd !== "justifyLeft" &&
+          cmd !== "justifyCenter" &&
+          cmd !== "justifyRight" &&
+          cmd !== "justify"
+      );
+
+      // If the alignment was active, toggle it off, otherwise add the new alignment
+      return isActive
+        ? cleanedCommands
+        : [...cleanedCommands, commandMap[alignment]];
     });
-    toggleStyle("div", { textAlign: alignment });
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const parent = selection.anchorNode.parentNode;
+
+    if (isActive) {
+      // If the alignment is active, toggle it off by resetting the text alignment
+      if (parent && parent.style.textAlign === alignment) {
+        parent.style.textAlign = "";
+      }
+      return;
+    }
+
+    // Apply the new alignment
+    parent.style.textAlign = alignment;
+    setEditorContent(document.getElementById("editor").innerHTML);
   };
 
   const createLink = () => {
@@ -232,9 +265,7 @@ const TextEditor = () => {
       if (cmd) activeCmds.push(cmd);
     }
 
-    setActiveCommands((prevCommands) => {
-      return [...new Set([...prevCommands, ...activeCmds])];
-    });
+    setActiveCommands(activeCmds);
 
     // Set the selected block type (p, h1, h2, etc.) only if it has changed
     if (["P", "H1", "H2", "H3", "H4", "H5", "H6"].includes(tagName)) {
@@ -262,7 +293,6 @@ const TextEditor = () => {
         const img = document.createElement("img");
         img.src = url;
         img.style.maxWidth = "100%"; // Ensure the image fits within the editor
-        console.log(img, "img");
 
         // Prevent image from being removed on click
         img.addEventListener("mousedown", (event) => {
@@ -425,12 +455,12 @@ const TextEditor = () => {
         <EditorButton
           onClick={undo}
           icon={icons.undo}
-          isActive={false} // Unlink is never active initially
+          isActive={false} // Undo is never active initially
         />
         <EditorButton
           onClick={redo}
           icon={icons.redo}
-          isActive={false} // Unlink is never active initially
+          isActive={false} // Redo is never active initially
         />
 
         <EditorButton
@@ -439,17 +469,6 @@ const TextEditor = () => {
           isActive={false}
         />
       </div>
-      {/* <div
-        id="editor"
-        contentEditable
-        dangerouslySetInnerHTML={{ __html: editorContent }}
-        style={{
-          border: "1px solid #ccc",
-          padding: "10px",
-          minHeight: "100px",
-        }}
-        onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
-      /> */}
       <ContentEditable
         id="editor"
         innerRef={divRef}
