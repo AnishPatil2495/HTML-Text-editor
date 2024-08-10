@@ -5,7 +5,7 @@ export const EditorButton = ({ onClick, icon, label, isActive, title }) => {
     <button
       style={{
         padding: "10px 15px",
-        margin: "5px",
+        // margin: "5px",
         borderRadius: "4px",
         backgroundColor: "#282c34",
         cursor: "pointer",
@@ -13,6 +13,7 @@ export const EditorButton = ({ onClick, icon, label, isActive, title }) => {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
+        border: isActive ? "1px solid #007BFF" : "",
       }}
       onClick={onClick}
       title={title}

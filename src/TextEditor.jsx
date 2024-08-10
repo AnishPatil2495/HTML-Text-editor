@@ -63,9 +63,9 @@ const TextEditor = () => {
   //   span.appendChild(selectedText);
   //   range.insertNode(span);
   //   setEditorContent(document.getElementById("editor").innerHTML);
-  //   window.getSelection().removeAllRanges();
+  //   // window.getSelection().removeAllRanges();
   // };
-
+  // console.log("editorContent", editorContent);
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
@@ -109,7 +109,7 @@ const TextEditor = () => {
     // Re-insert the processed content
     range.insertNode(tempDiv.firstChild);
     setEditorContent(document.getElementById("editor").innerHTML);
-    window.getSelection().removeAllRanges();
+    // window.getSelection().removeAllRanges();
   };
 
   const undo = () => {
@@ -137,7 +137,7 @@ const TextEditor = () => {
       const text = document.createTextNode(parent.innerText);
       parent.parentNode.replaceChild(text, parent);
       setEditorContent(document.getElementById("editor").innerHTML);
-      window.getSelection().removeAllRanges();
+      // window.getSelection().removeAllRanges();
     }
   };
 
@@ -152,10 +152,10 @@ const TextEditor = () => {
     });
 
     const selection = window.getSelection();
+    console.log("selection", selection.anchorNode);
     if (!selection.rangeCount) return;
 
     const parent = selection.anchorNode.parentNode;
-    console.log("Toggle", tag, parent.tagName);
     if (parent.tagName === tag.toUpperCase()) {
       console.log("Toggle list remove style called");
       removeStyle(tag);
@@ -581,9 +581,9 @@ const TextEditor = () => {
           onChange={(e) => changeBlockType(e.target.value)}
           style={{
             padding: "10px 15px",
-            margin: "5px",
+            // margin: "5px",
             borderRadius: "4px",
-            border: "1px solid #ccc",
+            border: "1px solid #282c34",
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
@@ -603,9 +603,9 @@ const TextEditor = () => {
           onChange={(e) => changeFontSize(e.target.value)}
           style={{
             padding: "10px 15px",
-            margin: "5px",
+            // margin: "5px",
             borderRadius: "4px",
-            border: "1px solid #ccc",
+            border: "1px solid #282c34",
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
@@ -626,9 +626,9 @@ const TextEditor = () => {
           onChange={(e) => applyFontToSelection(e.target.value)}
           style={{
             padding: "10px 15px",
-            margin: "5px",
+            // margin: "5px",
             borderRadius: "4px",
-            border: "1px solid #ccc",
+            border: "1px solid #282c34",
             backgroundColor: "#282c34",
             color: "#ffffff",
             cursor: "pointer",
@@ -750,6 +750,7 @@ const TextEditor = () => {
             border: "1px solid #ccc",
             padding: "10px",
             minHeight: "100px",
+            textAlign: "left",
           }}
         />
       )}
