@@ -9,6 +9,8 @@ const TextEditor = () => {
   const [activeCommands, setActiveCommands] = useState([]);
   const [editorContent, setEditorContent] = useState("");
   const [selectedBlock, setSelectedBlock] = useState("p"); // Default to paragraph
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
   const [isRemoving, setIsRemoving] = useState(false);
   const editorRef = useRef(null);
 
@@ -27,6 +29,20 @@ const TextEditor = () => {
     span.appendChild(selectedText);
     range.insertNode(span);
     setEditorContent(document.getElementById("editor").innerHTML);
+  };
+
+  const undo = () => {
+    if (!undoStack.length) return;
+    const lastState = undoStack.pop();
+    setRedoStack([...redoStack, editorContent]);
+    setEditorContent(lastState);
+  };
+
+  const redo = () => {
+    if (!redoStack.length) return;
+    const nextState = redoStack.pop();
+    setUndoStack([...undoStack, editorContent]);
+    setEditorContent(nextState);
   };
 
   const removeStyle = (tag) => {
@@ -288,10 +304,14 @@ const TextEditor = () => {
       .getElementById("editor")
       .addEventListener("keyup", checkActiveCommands);
   }, []);
+
   const handleChange = (e) => {
-    setEditorContent(e.target.value);
+    const newContent = e.target.value;
+    setUndoStack([...undoStack, editorContent]);
+    setEditorContent(newContent);
+    setRedoStack([]);
   };
-  console.log(editorContent, "editorContent");
+
   return (
     <div className='text-editor'>
       <div className='toolbar'>
@@ -378,6 +398,16 @@ const TextEditor = () => {
         <EditorButton
           onClick={unlink}
           icon={icons.unlink}
+          isActive={false} // Unlink is never active initially
+        />
+        <EditorButton
+          onClick={undo}
+          icon={icons.undo}
+          isActive={false} // Unlink is never active initially
+        />
+        <EditorButton
+          onClick={redo}
+          icon={icons.redo}
           isActive={false} // Unlink is never active initially
         />
 
