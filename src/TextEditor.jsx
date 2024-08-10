@@ -14,130 +14,160 @@ export const maintainCaretPosition = (event) => {
 };
 
 const TextEditor = () => {
-  const [content, setContent] = useState("");
   const [activeCommand, setActiveCommand] = useState("");
-  const editorRef = useRef(null);
+  const [editorContent, setEditorContent] = useState();
 
-  useEffect(() => {
-    const editor = editorRef.current;
-    if (editor) {
-      editor.contentEditable = true;
-      editor.addEventListener("input", handleInput);
+  const applyStyle = (tag, style = {}) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const selectedText = range.extractContents();
+    const span = document.createElement(tag);
+
+    Object.keys(style).forEach((key) => {
+      span.style[key] = style[key];
+    });
+
+    span.appendChild(selectedText);
+    range.insertNode(span);
+    setEditorContent(document.getElementById("editor").innerHTML);
+  };
+
+  const removeStyle = (tag) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const parent = selection.anchorNode.parentNode;
+
+    if (parent.tagName === tag.toUpperCase()) {
+      const text = document.createTextNode(parent.innerText);
+      parent.parentNode.replaceChild(text, parent);
+      setEditorContent(document.getElementById("editor").innerHTML);
     }
-    return () => {
-      if (editor) {
-        editor.removeEventListener("input", handleInput);
-      }
-    };
-  }, []);
-
-  const handleInput = (e) => {
-    maintainCaretPosition(e);
-    setContent(e.target.innerHTML);
   };
 
-  const execCommand = (command) => {
-    document.execCommand(command, false, null);
-    setActiveCommand(command); // Set the active command
-  };
+  const toggleStyle = (tag, style = {}) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
 
-  const execCommandWithValue = (command, value) => {
-    document.execCommand(command, false, value);
-    setActiveCommand(value); // Set the active command
-  };
-
-  const handleHeadingChange = (e) => {
-    const value = e.target.value;
-    if (value === "paragraph") {
-      execCommandWithValue("formatBlock", "p");
+    const parent = selection.anchorNode.parentNode;
+    if (parent.tagName === tag.toUpperCase()) {
+      removeStyle(tag);
     } else {
-      execCommandWithValue("formatBlock", value);
+      applyStyle(tag, style);
     }
+  };
+
+  const changeFontSize = () => {
+    toggleStyle("span", { fontSize: "24px" });
+  };
+
+  const toggleList = (listType) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const parent = selection.anchorNode.parentNode;
+
+    if (parent.tagName === listType.toUpperCase()) {
+      // Unwrap the list item
+      const list = parent.parentNode;
+      const fragment = document.createDocumentFragment();
+      while (list.firstChild) {
+        fragment.appendChild(list.firstChild);
+      }
+      list.parentNode.replaceChild(fragment, list);
+    } else {
+      // Wrap selected text in a list
+      const list = document.createElement(listType);
+      const listItem = document.createElement("li");
+      listItem.appendChild(range.extractContents());
+      list.appendChild(listItem);
+      range.insertNode(list);
+    }
+    setEditorContent(document.getElementById("editor").innerHTML);
+  };
+
+  const justifyText = (alignment) => {
+    toggleStyle("div", { textAlign: alignment });
+  };
+
+  const createLink = () => {
+    const url = prompt("Enter the URL");
+    if (!url) return;
+
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.appendChild(range.extractContents());
+    range.insertNode(anchor);
+    setEditorContent(document.getElementById("editor").innerHTML);
+  };
+
+  const unlink = () => {
+    removeStyle("a");
   };
 
   return (
     <div className="text-editor">
       <div className="toolbar">
-        <select
-          className="heading-dropdown"
-          onChange={handleHeadingChange}
-          value={activeCommand}
-        >
-          <option value="paragraph">Paragraph</option>
-          <option value="h1">Heading 1</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-          <option value="h4">Heading 4</option>
-          <option value="h5">Heading 5</option>
-          <option value="h6">Heading 6</option>
-        </select>
+        <EditorButton onClick={() => toggleStyle("b")} icon={icons.bold} />
+        <EditorButton onClick={() => toggleStyle("i")} icon={icons.italic} />
+        <EditorButton onClick={() => toggleStyle("u")} icon={icons.underline} />
         <EditorButton
-          onClick={() => execCommand("bold")}
-          icon={icons.bold}
-          isActive={activeCommand === "bold"}
-        />
-        <EditorButton
-          onClick={() => execCommand("italic")}
-          icon={icons.italic}
-          isActive={activeCommand === "italic"}
-        />
-        <EditorButton
-          onClick={() => execCommand("underline")}
-          icon={icons.underline}
-          isActive={activeCommand === "underline"}
-        />
-        <EditorButton
-          onClick={() => execCommand("strikeThrough")}
+          onClick={() => toggleStyle("strike")}
           icon={icons.strikethrough}
-          isActive={activeCommand === "strikeThrough"}
         />
+        <EditorButton onClick={changeFontSize} label="Font Size" />
         <EditorButton
-          onClick={() => execCommand("insertUnorderedList")}
+          onClick={() => toggleList("ul")}
           icon={icons.unorderedlist}
           isActive={activeCommand === "insertUnorderedList"}
         />
         <EditorButton
-          onClick={() => execCommand("insertOrderedList")}
+          onClick={() => toggleList("ol")}
           icon={icons.orderedlist}
           isActive={activeCommand === "insertOrderedList"}
         />
         <EditorButton
-          onClick={() => execCommand("justifyLeft")}
+          onClick={() => justifyText("left")}
           icon={icons.alignLeft}
           isActive={activeCommand === "justifyLeft"}
         />
         <EditorButton
-          onClick={() => execCommand("justifyCenter")}
+          onClick={() => justifyText("center")}
           icon={icons.alightCenter}
           isActive={activeCommand === "justifyCenter"}
         />
         <EditorButton
-          onClick={() => execCommand("justifyRight")}
+          onClick={() => justifyText("right")}
           icon={icons.alignRight}
           isActive={activeCommand === "justifyRight"}
         />
         <EditorButton
-          onClick={() => execCommand("justifyFull")}
+          onClick={() => justifyText("justify")}
           icon={icons.alignJustify}
           isActive={activeCommand === "justifyFull"}
         />
-        <EditorButton
-          onClick={() => execCommand("createLink")}
-          icon={icons.link}
-          isActive={activeCommand === "createLink"}
-        />
-        <EditorButton
-          onClick={() => execCommand("unlink")}
-          icon={icons.unlink}
-          isActive={activeCommand === "unlink"}
-        />
-        <EditorButton icon={icons.image} />
+        <EditorButton onClick={createLink} icon={icons.link} />
+        <EditorButton onClick={unlink} icon={icons.unlink} isActive={true} />
       </div>
       <div
-        ref={editorRef}
-        className="editor"
-        dangerouslySetInnerHTML={{ __html: content }}
-      ></div>
+        id="editor"
+        contentEditable
+        dangerouslySetInnerHTML={{ __html: editorContent }}
+        style={{
+          border: "1px solid #ccc",
+          padding: "10px",
+          minHeight: "100px",
+        }}
+        onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
+      />
     </div>
   );
 };
