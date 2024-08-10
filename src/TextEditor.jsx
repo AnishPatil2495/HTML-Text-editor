@@ -8,7 +8,88 @@ const TextEditor = () => {
   const divRef = useRef(null);
   const [activeCommands, setActiveCommands] = useState([]);
   const [editorContent, setEditorContent] = useState("");
-  const [selectedBlock, setSelectedBlock] = useState("p"); // Default to paragraph
+  const [selectedBlock, setSelectedBlock] = useState("p");
+  const [fontSize, setFontSize] = useState("24px");
+  const [undoStack, setUndoStack] = useState([]);
+  const [redoStack, setRedoStack] = useState([]);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const editorRef = useRef(null);
+
+  // const applyStyle = (tag, style = {}) => {
+  //   const selection = window.getSelection();
+  //   if (!selection.rangeCount) return;
+
+  //   const range = selection.getRangeAt(0);
+  //   const selectedText = range.extractContents();
+  //   const element = document.createElement(tag);
+
+  //   Object.keys(style).forEach((key) => {
+  //     element.style[key] = style[key];
+  //   });
+
+  //   element.appendChild(selectedText);
+  //   range.insertNode(element);
+
+  //   // Ensure the editor content is updated
+  //   setEditorContent(document.getElementById("editor").innerHTML);
+  // };
+
+  const undo = () => {
+    if (!undoStack.length) return;
+    const lastState = undoStack.pop();
+    setRedoStack([...redoStack, editorContent]);
+    setEditorContent(lastState);
+  };
+
+  const redo = () => {
+    if (!redoStack.length) return;
+    const nextState = redoStack.pop();
+    setUndoStack([...undoStack, editorContent]);
+    setEditorContent(nextState);
+  };
+
+  // const removeStyle = (tag) => {
+  //   const selection = window.getSelection();
+  //   if (!selection.rangeCount) return;
+
+  //   const range = selection.getRangeAt(0);
+  //   const parent = selection.anchorNode.parentNode;
+
+  //   if (parent.tagName === tag) {
+  //     const fragment = document.createDocumentFragment();
+  //     while (parent.firstChild) {
+  //       fragment.appendChild(parent.firstChild);
+  //     }
+  //     range.deleteContents();
+  //     range.insertNode(fragment);
+
+  //     // Ensure the editor content is updated
+  //     setEditorContent(document.getElementById("editor").innerHTML);
+  //   }
+  // };
+
+  // const toggleStyle = (tag, style = {}) => {
+  //   const selection = window.getSelection();
+  //   if (!selection.rangeCount) return;
+
+  //   const parent = selection.anchorNode.parentNode;
+  //   console.log("parent.tagName", parent.tagName, style);
+  //   if (parent.tagName === tag) {
+  //     removeStyle(tag);
+  //   } else {
+  //     applyStyle(tag, style);
+  //   }
+
+  //   // Update active commands
+  // setActiveCommands((prevCommands) => {
+  //   const isActive = prevCommands.includes(tag);
+  //   if (isActive) {
+  //     return prevCommands.filter((cmd) => cmd !== tag);
+  //   } else {
+  //     return [...prevCommands, tag];
+  //   }
+  // });
+  // };
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
@@ -16,16 +97,14 @@ const TextEditor = () => {
 
     const range = selection.getRangeAt(0);
     const selectedText = range.extractContents();
-    const element = document.createElement(tag);
+    const span = document.createElement(tag);
 
     Object.keys(style).forEach((key) => {
-      element.style[key] = style[key];
+      span.style[key] = style[key];
     });
 
-    element.appendChild(selectedText);
-    range.insertNode(element);
-
-    // Ensure the editor content is updated
+    span.appendChild(selectedText);
+    range.insertNode(span);
     setEditorContent(document.getElementById("editor").innerHTML);
   };
 
@@ -37,14 +116,8 @@ const TextEditor = () => {
     const parent = selection.anchorNode.parentNode;
 
     if (parent.tagName === tag) {
-      const fragment = document.createDocumentFragment();
-      while (parent.firstChild) {
-        fragment.appendChild(parent.firstChild);
-      }
-      range.deleteContents();
-      range.insertNode(fragment);
-
-      // Ensure the editor content is updated
+      const text = document.createTextNode(parent.innerText);
+      parent.parentNode.replaceChild(text, parent);
       setEditorContent(document.getElementById("editor").innerHTML);
     }
   };
@@ -54,14 +127,12 @@ const TextEditor = () => {
     if (!selection.rangeCount) return;
 
     const parent = selection.anchorNode.parentNode;
-    console.log("parent.tagName", parent.tagName, style);
     if (parent.tagName === tag) {
       removeStyle(tag);
     } else {
       applyStyle(tag, style);
     }
 
-    // Update active commands
     setActiveCommands((prevCommands) => {
       const isActive = prevCommands.includes(tag);
       if (isActive) {
@@ -71,8 +142,10 @@ const TextEditor = () => {
       }
     });
   };
-  const changeFontSize = () => {
-    toggleStyle("span", { fontSize: "24px" });
+
+  const changeFontSize = (size) => {
+    setFontSize(size);
+    toggleStyle("span", { fontSize: size });
   };
 
   const toggleList = (listType) => {
@@ -235,6 +308,58 @@ const TextEditor = () => {
     }
   };
 
+  const handleImageUpload = () => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = reader.result;
+
+        // Create an image element
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.maxWidth = "100%"; // Ensure the image fits within the editor
+        console.log(img, "img");
+
+        // Prevent image from being removed on click
+        img.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+        });
+
+        // Insert the image at the current selection or at the end of the editor
+        const editor = divRef.current;
+
+        if (editor) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents(); // Remove any selected content
+            range.insertNode(img);
+            range.collapse(false); // Ensure cursor is placed after the image
+          } else {
+            editor.appendChild(img);
+          }
+
+          // Move cursor to the end after inserting image
+          const newRange = document.createRange();
+          const newSelection = window.getSelection();
+          newRange.selectNodeContents(editor);
+          newRange.collapse(false);
+          newSelection.removeAllRanges();
+          newSelection.addRange(newRange);
+
+          setEditorContent(editor.innerHTML);
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+  };
+
   useEffect(() => {
     document
       .getElementById("editor")
@@ -245,10 +370,30 @@ const TextEditor = () => {
   }, []);
 
   const handleChange = (e) => {
-    setEditorContent(e.target.value);
+    replaceCaret(e.target);
+    const newContent = e.target.value;
+    setUndoStack([...undoStack, editorContent]);
+    setEditorContent(newContent);
+    setRedoStack([]);
   };
-
-  console.log("Editor content: ", editorContent);
+  function replaceCaret(el) {
+    // Place the caret at the end of the element
+    var target = document.createTextNode("");
+    el.appendChild(target);
+    // do not move caret if element was not focused
+    var isTargetFocused = document.activeElement === el;
+    if (target !== null && target.nodeValue !== null && isTargetFocused) {
+      var sel = window.getSelection();
+      if (sel !== null) {
+        var range = document.createRange();
+        range.setStart(target, target.nodeValue.length);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      if (el instanceof HTMLElement) el.focus();
+    }
+  }
 
   return (
     <div className="text-editor">
@@ -274,6 +419,30 @@ const TextEditor = () => {
           <option value="h5">Heading 5</option>
           <option value="h6">Heading 6</option>
         </select>
+
+        <select
+          value={fontSize}
+          onChange={(e) => changeFontSize(e.target.value)}
+          style={{
+            padding: "10px 15px",
+            margin: "5px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+            backgroundColor: "#282c34",
+            color: "#ffffff",
+            cursor: "pointer",
+          }}
+        >
+          <option value="12px">12</option>
+          <option value="14px">14</option>
+          <option value="16px">16</option>
+          <option value="18px">18</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="28px">28</option>
+          <option value="32px">32</option>
+        </select>
+
         <EditorButton
           onClick={() => toggleStyle("b")}
           icon={icons.bold}
@@ -293,11 +462,6 @@ const TextEditor = () => {
           onClick={() => toggleStyle("strike")}
           icon={icons.strikethrough}
           isActive={activeCommands.includes("strike")}
-        />
-        <EditorButton
-          onClick={changeFontSize}
-          label="Font Size"
-          isActive={activeCommands.includes("span")}
         />
         <EditorButton
           onClick={() => toggleList("ul")}
@@ -339,8 +503,36 @@ const TextEditor = () => {
           icon={icons.unlink}
           isActive={false} // Unlink is never active initially
         />
+        <EditorButton
+          onClick={undo}
+          icon={icons.undo}
+          isActive={false} // Unlink is never active initially
+        />
+        <EditorButton
+          onClick={redo}
+          icon={icons.redo}
+          isActive={false} // Unlink is never active initially
+        />
+
+        <EditorButton
+          onClick={handleImageUpload}
+          icon={icons.imageUpload}
+          isActive={false}
+        />
       </div>
-      <ContentEditable
+      <div
+        id="editor"
+        contentEditable
+        dangerouslySetInnerHTML={{ __html: editorContent }}
+        style={{
+          border: "1px solid #ccc",
+          padding: "10px",
+          minHeight: "100px",
+          textAlign: "left",
+        }}
+        onInput={(e) => handleChange(e)}
+      />
+      {/* <ContentEditable
         id="editor"
         innerRef={divRef}
         html={editorContent}
@@ -352,7 +544,7 @@ const TextEditor = () => {
           minHeight: "100px",
           textAlign: "left",
         }}
-      />
+      /> */}
     </div>
   );
 };
