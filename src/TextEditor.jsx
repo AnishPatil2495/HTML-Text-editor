@@ -48,6 +48,8 @@ const TextEditor = () => {
   const [redoStack, setRedoStack] = useState([]);
   const [codeView, setCodeView] = useState(false);
 
+  const [selectedColor, setSelectedColor] = useState("#ffffff");
+
   // const applyStyle = (tag, style = {}) => {
   //   const selection = window.getSelection();
   //   if (!selection.rangeCount) return;
@@ -66,6 +68,8 @@ const TextEditor = () => {
   //   // window.getSelection().removeAllRanges();
   // };
   // console.log("editorContent", editorContent);
+
+  // Function to apply a style or tag to the selected text
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
@@ -417,6 +421,27 @@ const TextEditor = () => {
     setEditorContent(divRef.current.innerHTML);
   };
 
+  const applyColor = (color) => {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const selectedText = range.extractContents();
+
+    // Create a span to wrap the selected text and apply color
+    const span = document.createElement("span");
+    span.style.color = color;
+    setSelectedColor(color);
+
+    // Append the selected text to the span
+    span.appendChild(selectedText);
+
+    // Insert the span back into the document
+    range.insertNode(span);
+    setEditorContent(document.getElementById("editor").innerHTML);
+    window.getSelection().removeAllRanges();
+  };
+
   const handleImageUpload = () => {
     const input = document.createElement("input");
     input.setAttribute("type", "file");
@@ -639,6 +664,34 @@ const TextEditor = () => {
           <option value="Courier New">Courier New</option>
           <option value="verdana">verdana</option>
         </select>
+
+        <div
+          style={{
+            padding: "5px 10px",
+            margin: "5px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+            backgroundColor: "#282c34",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <input
+            type="color"
+            value={selectedColor}
+            onChange={(e) => applyColor(e.target.value)}
+            style={{
+              backgroundColor: "transparent",
+              border: "none",
+              width: "2rem",
+              height: "2rem",
+              cursor: "pointer",
+              padding: "0",
+            }}
+          />
+        </div>
 
         <EditorButton
           onClick={() => toggleStyle("b")}
