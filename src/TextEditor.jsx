@@ -15,25 +15,6 @@ const TextEditor = () => {
   const [isRemoving, setIsRemoving] = useState(false);
   const editorRef = useRef(null);
 
-  // const applyStyle = (tag, style = {}) => {
-  //   const selection = window.getSelection();
-  //   if (!selection.rangeCount) return;
-
-  //   const range = selection.getRangeAt(0);
-  //   const selectedText = range.extractContents();
-  //   const element = document.createElement(tag);
-
-  //   Object.keys(style).forEach((key) => {
-  //     element.style[key] = style[key];
-  //   });
-
-  //   element.appendChild(selectedText);
-  //   range.insertNode(element);
-
-  //   // Ensure the editor content is updated
-  //   setEditorContent(document.getElementById("editor").innerHTML);
-  // };
-
   const undo = () => {
     if (!undoStack.length) return;
     const lastState = undoStack.pop();
@@ -47,49 +28,6 @@ const TextEditor = () => {
     setUndoStack([...undoStack, editorContent]);
     setEditorContent(nextState);
   };
-
-  // const removeStyle = (tag) => {
-  //   const selection = window.getSelection();
-  //   if (!selection.rangeCount) return;
-
-  //   const range = selection.getRangeAt(0);
-  //   const parent = selection.anchorNode.parentNode;
-
-  //   if (parent.tagName === tag) {
-  //     const fragment = document.createDocumentFragment();
-  //     while (parent.firstChild) {
-  //       fragment.appendChild(parent.firstChild);
-  //     }
-  //     range.deleteContents();
-  //     range.insertNode(fragment);
-
-  //     // Ensure the editor content is updated
-  //     setEditorContent(document.getElementById("editor").innerHTML);
-  //   }
-  // };
-
-  // const toggleStyle = (tag, style = {}) => {
-  //   const selection = window.getSelection();
-  //   if (!selection.rangeCount) return;
-
-  //   const parent = selection.anchorNode.parentNode;
-  //   console.log("parent.tagName", parent.tagName, style);
-  //   if (parent.tagName === tag) {
-  //     removeStyle(tag);
-  //   } else {
-  //     applyStyle(tag, style);
-  //   }
-
-  //   // Update active commands
-  // setActiveCommands((prevCommands) => {
-  //   const isActive = prevCommands.includes(tag);
-  //   if (isActive) {
-  //     return prevCommands.filter((cmd) => cmd !== tag);
-  //   } else {
-  //     return [...prevCommands, tag];
-  //   }
-  // });
-  // };
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
