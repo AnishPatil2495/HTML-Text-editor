@@ -16,6 +16,7 @@ export const maintainCaretPosition = (event) => {
 
 const TextEditor = () => {
   const [editorContent, setEditorContent] = useState();
+  const [displayHtml, setDisplayHtml] = useState(false);
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
@@ -41,7 +42,7 @@ const TextEditor = () => {
     const range = selection.getRangeAt(0);
     const parent = selection.anchorNode.parentNode;
 
-    if (parent.tagName === tag.toUpperCase()) {
+    if (parent.tagName === tag) {
       const text = document.createTextNode(parent.innerText);
       parent.parentNode.replaceChild(text, parent);
       setEditorContent(document.getElementById("editor").innerHTML);
@@ -53,7 +54,7 @@ const TextEditor = () => {
     if (!selection.rangeCount) return;
 
     const parent = selection.anchorNode.parentNode;
-    if (parent.tagName === tag.toUpperCase()) {
+    if (parent.tagName === tag) {
       removeStyle(tag);
     } else {
       applyStyle(tag, style);
@@ -71,7 +72,7 @@ const TextEditor = () => {
     const range = selection.getRangeAt(0);
     const parent = selection.anchorNode.parentNode;
 
-    if (parent.tagName === listType.toUpperCase()) {
+    if (parent.tagName === listType) {
       // Unwrap the list item
       const list = parent.parentNode;
       const fragment = document.createDocumentFragment();
@@ -150,18 +151,37 @@ const TextEditor = () => {
         />
         <EditorButton onClick={createLink} icon={icons.link} />
         <EditorButton onClick={unlink} icon={icons.unlink} isActive={true} />
+        <EditorButton
+          onClick={() => setDisplayHtml(!displayHtml)}
+          label={`${displayHtml ? "Display Text" : "Display HTML"}`}
+        />
       </div>
-      <div
-        id="editor"
-        contentEditable
-        dangerouslySetInnerHTML={{ __html: editorContent }}
-        style={{
-          border: "1px solid #ccc",
-          padding: "10px",
-          minHeight: "100px",
-        }}
-        onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
-      />
+      {displayHtml ? (
+        <div
+          id="editor"
+          contentEditable
+          style={{
+            border: "1px solid #ccc",
+            padding: "10px",
+            minHeight: "100px",
+          }}
+          onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
+        >
+          {editorContent}
+        </div>
+      ) : (
+        <div
+          id="editor"
+          contentEditable
+          dangerouslySetInnerHTML={{ __html: editorContent }}
+          style={{
+            border: "1px solid #ccc",
+            padding: "10px",
+            minHeight: "100px",
+          }}
+          onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
+        />
+      )}
     </div>
   );
 };
