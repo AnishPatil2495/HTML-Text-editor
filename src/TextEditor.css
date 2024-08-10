@@ -9,18 +9,6 @@
   margin-bottom: 10px;
 }
 
-.toolbar button {
-  margin: 0 5px;
-  padding: 5px 10px;
-  border: 1px solid #ccc;
-  background: #f9f9f9;
-  cursor: pointer;
-}
-
-.toolbar button:hover {
-  background: #eee;
-}
-
 .editor {
   border: 1px solid #ccc;
   min-height: 200px;

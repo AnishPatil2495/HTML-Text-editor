@@ -48,21 +48,68 @@ const TextEditor = () => {
   const [redoStack, setRedoStack] = useState([]);
   const [codeView, setCodeView] = useState(false);
 
+  // const applyStyle = (tag, style = {}) => {
+  //   const selection = window.getSelection();
+  //   if (!selection.rangeCount) return;
+
+  //   const range = selection.getRangeAt(0);
+  //   const selectedText = range.extractContents();
+  //   const span = document.createElement(tag);
+
+  //   Object.keys(style).forEach((key) => {
+  //     span.style[key] = style[key];
+  //   });
+
+  //   span.appendChild(selectedText);
+  //   range.insertNode(span);
+  //   setEditorContent(document.getElementById("editor").innerHTML);
+  //   window.getSelection().removeAllRanges();
+  // };
+
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
 
     const range = selection.getRangeAt(0);
     const selectedText = range.extractContents();
-    const span = document.createElement(tag);
 
-    Object.keys(style).forEach((key) => {
-      span.style[key] = style[key];
-    });
+    // Create a temporary container to hold the selected content
+    const tempDiv = document.createElement("div");
+    tempDiv.appendChild(selectedText);
 
-    span.appendChild(selectedText);
-    range.insertNode(span);
+    // Function to remove all occurrences of a specific tag recursively
+    const removeTagRecursively = (element, tagName) => {
+      const children = element.querySelectorAll(tagName);
+      children.forEach((child) => {
+        while (child.firstChild) {
+          child.parentNode.insertBefore(child.firstChild, child);
+        }
+        child.parentNode.removeChild(child);
+      });
+    };
+
+    // Check if the content is already wrapped with the tag
+    const isWrapped =
+      tempDiv.firstChild && tempDiv.firstChild.tagName === tag.toUpperCase();
+
+    if (isWrapped) {
+      // If the content is already wrapped, remove all instances of the tag
+      removeTagRecursively(tempDiv, tag.toLowerCase());
+    } else {
+      // If not wrapped, create the wrapping tag and apply styles
+      const span = document.createElement(tag);
+      Object.keys(style).forEach((key) => {
+        span.style[key] = style[key];
+      });
+      span.innerHTML = tempDiv.innerHTML;
+      tempDiv.innerHTML = "";
+      tempDiv.appendChild(span);
+    }
+
+    // Re-insert the processed content
+    range.insertNode(tempDiv.firstChild);
     setEditorContent(document.getElementById("editor").innerHTML);
+    window.getSelection().removeAllRanges();
   };
 
   const undo = () => {
@@ -86,10 +133,11 @@ const TextEditor = () => {
     const range = selection.getRangeAt(0);
     const parent = selection.anchorNode.parentNode;
 
-    if (parent.tagName === tag) {
+    if (parent.tagName === tag.toUpperCase()) {
       const text = document.createTextNode(parent.innerText);
       parent.parentNode.replaceChild(text, parent);
       setEditorContent(document.getElementById("editor").innerHTML);
+      window.getSelection().removeAllRanges();
     }
   };
 
@@ -107,7 +155,9 @@ const TextEditor = () => {
     if (!selection.rangeCount) return;
 
     const parent = selection.anchorNode.parentNode;
-    if (parent.tagName === tag) {
+    console.log("Toggle", tag, parent.tagName);
+    if (parent.tagName === tag.toUpperCase()) {
+      console.log("Toggle list remove style called");
       removeStyle(tag);
     } else {
       applyStyle(tag, style);
@@ -186,9 +236,11 @@ const TextEditor = () => {
 
     const range = selection.getRangeAt(0);
     const parent = selection.anchorNode.parentNode;
+    console.log("Justify text reset called outside", parent, selection);
 
     if (isActive) {
       // If the alignment is active, toggle it off by resetting the text alignment
+      console.log("Justify text reset called", parent, selection);
       if (parent && parent.style.textAlign === alignment) {
         parent.style.textAlign = "";
       }
@@ -483,6 +535,7 @@ const TextEditor = () => {
   };
 
   const handleChange = (e) => {
+    // replaceCaret(e.target);
     const newContent = e.target.value;
 
     if (codeView) {
@@ -500,6 +553,25 @@ const TextEditor = () => {
       divRef.current.blur();
     }
   }, [codeView]);
+
+  function replaceCaret(el) {
+    // Place the caret at the end of the element
+    var target = document.createTextNode("");
+    el.appendChild(target);
+    // do not move caret if element was not focused
+    var isTargetFocused = document.activeElement === el;
+    if (target !== null && target.nodeValue !== null && isTargetFocused) {
+      var sel = window.getSelection();
+      if (sel !== null) {
+        var range = document.createRange();
+        range.setStart(target, target.nodeValue.length);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      if (el instanceof HTMLElement) el.focus();
+    }
+  }
 
   return (
     <div className="text-editor">
