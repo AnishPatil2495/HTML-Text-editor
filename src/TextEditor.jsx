@@ -3,15 +3,17 @@ import "./TextEditor.css";
 import { EditorButton } from "./components/button/button";
 import { icons } from "./assets";
 import ContentEditable from "./ContentEditable";
+import DOMPurify from 'dompurify';
 
 const TextEditor = () => {
   const divRef = useRef(null);
   const [activeCommands, setActiveCommands] = useState([]);
   const [editorContent, setEditorContent] = useState("");
-  const [selectedBlock, setSelectedBlock] = useState("p"); // Default to paragraph
+  const [selectedBlock, setSelectedBlock] = useState("p");
+  const [fontSize, setFontSize] = useState("24px");
   const [undoStack, setUndoStack] = useState([]);
   const [redoStack, setRedoStack] = useState([]);
-  const [codeView, setCodeView] = useState(false)
+  const [codeView, setCodeView] = useState(false);
 
   const applyStyle = (tag, style = {}) => {
     const selection = window.getSelection();
@@ -29,7 +31,6 @@ const TextEditor = () => {
     range.insertNode(span);
     setEditorContent(document.getElementById("editor").innerHTML);
   };
-
 
   const undo = () => {
     if (!undoStack.length) return;
@@ -62,11 +63,7 @@ const TextEditor = () => {
   const toggleStyle = (tag, style = {}) => {
     setActiveCommands((prevCommands) => {
       const isActive = prevCommands.includes(tag);
-      if (isActive) {
-        return prevCommands.filter((cmd) => cmd !== tag);
-      } else {
-        return [...prevCommands, tag];
-      }
+      return isActive ? prevCommands.filter((cmd) => cmd !== tag) : [...prevCommands, tag];
     });
 
     const selection = window.getSelection();
@@ -80,18 +77,15 @@ const TextEditor = () => {
     }
   };
 
-  const changeFontSize = () => {
-    toggleStyle("span", { fontSize: "24px" });
+  const changeFontSize = (size) => {
+    setFontSize(size);
+    toggleStyle("span", { fontSize: size });
   };
 
   const toggleList = (listType) => {
     setActiveCommands((prevCommands) => {
       const isActive = prevCommands.includes(listType);
-      if (isActive) {
-        return prevCommands.filter((cmd) => cmd !== listType);
-      } else {
-        return [...prevCommands, listType];
-      }
+      return isActive ? prevCommands.filter((cmd) => cmd !== listType) : [...prevCommands, listType];
     });
 
     const selection = window.getSelection();
@@ -101,7 +95,6 @@ const TextEditor = () => {
     const parent = selection.anchorNode.parentNode;
 
     if (parent.tagName === listType) {
-      // Unwrap the list item
       const list = parent.parentNode;
       const fragment = document.createDocumentFragment();
       while (list.firstChild) {
@@ -109,7 +102,6 @@ const TextEditor = () => {
       }
       list.parentNode.replaceChild(fragment, list);
     } else {
-      // Wrap selected text in a list
       const list = document.createElement(listType);
       const listItem = document.createElement("li");
       listItem.appendChild(range.extractContents());
@@ -122,12 +114,9 @@ const TextEditor = () => {
   const justifyText = (alignment) => {
     setActiveCommands((prevCommands) => {
       const isActive = prevCommands.includes(alignment);
-      if (isActive) {
-        return prevCommands.filter((cmd) => cmd !== alignment);
-      } else {
-        return [...prevCommands, alignment];
-      }
+      return isActive ? prevCommands.filter((cmd) => cmd !== alignment) : [...prevCommands, alignment];
     });
+
     toggleStyle("div", { textAlign: alignment });
   };
 
@@ -136,6 +125,7 @@ const TextEditor = () => {
     if (!url) return;
 
     setActiveCommands((prevCommands) => [...prevCommands, "a"]);
+
     const selection = window.getSelection();
     if (!selection.rangeCount) return;
 
@@ -154,9 +144,7 @@ const TextEditor = () => {
     const parent = selection.anchorNode.parentNode;
     if (parent.tagName === "A") {
       removeStyle("a");
-      setActiveCommands((prevCommands) =>
-        prevCommands.filter((cmd) => cmd !== "a")
-      );
+      setActiveCommands((prevCommands) => prevCommands.filter((cmd) => cmd !== "a"));
     }
   };
 
@@ -168,9 +156,7 @@ const TextEditor = () => {
     const parent = selection.anchorNode.parentNode;
 
     const newBlock = document.createElement(blockType);
-
     newBlock.appendChild(range.extractContents());
-
     range.insertNode(newBlock);
 
     const newRange = document.createRange();
@@ -234,14 +220,58 @@ const TextEditor = () => {
       return [...new Set([...prevCommands, ...activeCmds])];
     });
 
-    // Set the selected block type (p, h1, h2, etc.) only if it has changed
     if (["P", "H1", "H2", "H3", "H4", "H5", "H6"].includes(tagName)) {
       setSelectedBlock((prevBlock) => {
-        return prevBlock !== tagName.toLowerCase()
-          ? tagName.toLowerCase()
-          : prevBlock;
+        return prevBlock !== tagName.toLowerCase() ? tagName.toLowerCase() : prevBlock;
       });
     }
+  };
+
+  const handleImageUpload = () => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const url = reader.result;
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.maxWidth = "100%";
+
+        img.addEventListener("mousedown", (event) => {
+          event.preventDefault();
+        });
+
+        const editor = divRef.current;
+
+        if (editor) {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            range.deleteContents();
+            range.insertNode(img);
+            range.collapse(false);
+          } else {
+            editor.appendChild(img);
+          }
+
+          const newRange = document.createRange();
+          const newSelection = window.getSelection();
+          newRange.selectNodeContents(editor);
+          newRange.collapse(false);
+          newSelection.removeAllRanges();
+          newSelection.addRange(newRange);
+
+          setEditorContent(editor.innerHTML);
+        }
+      };
+      reader.readAsDataURL(file);
+    };
   };
 
   useEffect(() => {
@@ -253,18 +283,59 @@ const TextEditor = () => {
       .addEventListener("keyup", checkActiveCommands);
   }, []);
 
-  const handleChange = (e) => {
-    const newContent = e.target.value;
-    setUndoStack([...undoStack, editorContent]);
-    setEditorContent(newContent);
-    setRedoStack([]);
-  };
-
 
   const toggleCodeView = () => {
-    setCodeView(!codeView)
-  }
+    setCodeView((prevCodeView) => {
+      if (prevCodeView) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(DOMPurify.sanitize(editorContent), "text/html");
   
+        const tables = doc.querySelectorAll('table');
+        tables.forEach(table => {
+          const figure = doc.createElement('figure');
+          figure.classList.add('table');
+          table.parentNode.replaceChild(figure, table);
+          figure.appendChild(table);
+        });
+  
+        const images = doc.querySelectorAll('img');
+        images.forEach(image => {
+          const figure = doc.createElement('figure');
+          figure.classList.add('image');
+          image.parentNode.replaceChild(figure, image);
+          figure.appendChild(image);
+        });
+  
+        setEditorContent(doc.body.innerHTML);
+      } else {
+        const editorHtml = divRef.current.innerHTML;
+        setEditorContent(editorHtml);
+      }
+  
+      return !prevCodeView;
+    });
+  };
+  
+
+  const handleChange = (e) => {
+    const newContent = e.target.value;
+  
+    if (codeView) {
+      setEditorContent(newContent);
+    } else {
+      setUndoStack([...undoStack, editorContent]);
+      setEditorContent(newContent);
+      setRedoStack([]);
+    }
+  };
+  
+  useEffect(() => {
+    if (divRef.current) {
+      divRef.current.focus();
+    }
+  }, [codeView]);
+
+  console.log(codeView);
   return (
     <div className="text-editor">
       <div className="toolbar">
@@ -289,6 +360,30 @@ const TextEditor = () => {
           <option value="h5">Heading 5</option>
           <option value="h6">Heading 6</option>
         </select>
+
+        <select
+          value={fontSize}
+          onChange={(e) => changeFontSize(e.target.value)}
+          style={{
+            padding: "10px 15px",
+            margin: "5px",
+            borderRadius: "4px",
+            border: "1px solid #ccc",
+            backgroundColor: "#282c34",
+            color: "#ffffff",
+            cursor: "pointer",
+          }}
+        >
+          <option value="12px">12</option>
+          <option value="14px">14</option>
+          <option value="16px">16</option>
+          <option value="18px">18</option>
+          <option value="20px">20</option>
+          <option value="24px">24</option>
+          <option value="28px">28</option>
+          <option value="32px">32</option>
+        </select>
+
         <EditorButton
           onClick={() => toggleStyle("b")}
           icon={icons.bold}
@@ -308,11 +403,6 @@ const TextEditor = () => {
           onClick={() => toggleStyle("strike")}
           icon={icons.strikethrough}
           isActive={activeCommands.includes("strike")}
-        />
-        <EditorButton
-          onClick={changeFontSize}
-          label="Font Size"
-          isActive={activeCommands.includes("span")}
         />
         <EditorButton
           onClick={() => toggleList("ul")}
@@ -352,40 +442,33 @@ const TextEditor = () => {
         <EditorButton
           onClick={unlink}
           icon={icons.unlink}
-          isActive={false} 
+          isActive={false}
         />
         <EditorButton
           onClick={undo}
           icon={icons.undo}
-          isActive={false} 
+          isActive={false}
         />
         <EditorButton
           onClick={redo}
           icon={icons.redo}
-          isActive={false} 
+          isActive={false}
         />
-         <EditorButton
+        <EditorButton
           onClick={toggleCodeView}
           icon={icons.code}
           isActive={codeView}
         />
+        <EditorButton
+          onClick={handleImageUpload}
+          icon={icons.imageUpload}
+          isActive={false}
+        />
       </div>
-      {/* <div
-        id="editor"
-        contentEditable
-        dangerouslySetInnerHTML={{ __html: editorContent }}
-        style={{
-          border: "1px solid #ccc",
-          padding: "10px",
-          minHeight: "100px",
-        }}
-        onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
-      /> */}
       <ContentEditable
         id="editor"
         innerRef={divRef}
-        key={codeView}
-        html={editorContent}
+        html={codeView ? editorContent : decodeHtml(editorContent)}
         disabled={false}
         onChange={handleChange}
         allowHtml={codeView}
@@ -397,6 +480,12 @@ const TextEditor = () => {
       />
     </div>
   );
+};
+
+const decodeHtml = (html) => {
+  const txt = document.createElement("textarea");
+  txt.innerHTML = html;
+  return txt.value;
 };
 
 export default TextEditor;

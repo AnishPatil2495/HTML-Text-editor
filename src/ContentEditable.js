@@ -3,7 +3,7 @@ import deepEqual from 'fast-deep-equal';
 import PropTypes from 'prop-types';
 
 function normalizeHtml(str) {
-  return str && str.replace(/&nbsp;|\u202F|\u00A0/g, ' ').replace(/<br \/>/g, '<br>');
+  return str && str.replace(/&nbsp;|\u202F|\u00A0/g, ' ').replace(/<br\s*\/?>/g, '<br>');
 }
 
 function replaceCaret(el) {
@@ -50,13 +50,14 @@ export default class ContentEditable extends React.Component {
         contentEditable: !this.props.disabled,
         dangerouslySetInnerHTML: { __html: allowHtml ? html : this.escapeHtml(html) }
       },
-      this.props.children);
+      this.props.children
+    );
   }
 
   escapeHtml(html) {
     const div = document.createElement('div');
     div.innerText = html;
-    return div.innerHTML;
+    return div.innerHTML.replace(/\n/g, '<br>');
   }
 
   shouldComponentUpdate(nextProps) {
@@ -69,16 +70,19 @@ export default class ContentEditable extends React.Component {
       return true;
     }
 
-    return props.disabled !== nextProps.disabled ||
+    return (
+      props.disabled !== nextProps.disabled ||
       props.tagName !== nextProps.tagName ||
       props.className !== nextProps.className ||
       props.innerRef !== nextProps.innerRef ||
       props.placeholder !== nextProps.placeholder ||
       !deepEqual(props.style, nextProps.style) ||
-      props.allowHtml !== nextProps.allowHtml;
+      props.allowHtml !== nextProps.allowHtml
+    );
   }
 
   componentDidUpdate() {
+    console.log("UPDATE")
     const el = this.getEl();
     if (!el) return;
 
@@ -97,13 +101,14 @@ export default class ContentEditable extends React.Component {
     if (this.props.onChange && html !== this.lastHtml) {
       const evt = Object.assign({}, originalEvt, {
         target: {
-          value: html
-        }
+          value: html,
+        },
       });
+      console.log("codeview: ", this.props.allowHtml)
       this.props.onChange(evt);
     }
     this.lastHtml = html;
-  }
+  };
 
   static propTypes = {
     html: PropTypes.string.isRequired,
@@ -112,10 +117,7 @@ export default class ContentEditable extends React.Component {
     tagName: PropTypes.string,
     className: PropTypes.string,
     style: PropTypes.object,
-    innerRef: PropTypes.oneOfType([
-      PropTypes.object,
-      PropTypes.func,
-    ]),
-    allowHtml: PropTypes.bool
-  }
+    innerRef: PropTypes.oneOfType([PropTypes.object, PropTypes.func]),
+    allowHtml: PropTypes.bool,
+  };
 }
