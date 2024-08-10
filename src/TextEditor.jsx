@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./TextEditor.css";
 
+import { EditorButton } from "./components/button/button";
+
+import { icons } from "./assets";
+
 export const maintainCaretPosition = (event) => {
   const caret = event.target.selectionStart;
   const element = event.target;
@@ -43,30 +47,60 @@ const TextEditor = () => {
   return (
     <div className="text-editor">
       <div className="toolbar">
-        <button onClick={() => execCommand("bold")}>Bold</button>
-        <button onClick={() => execCommand("italic")}>Italic</button>
-        <button onClick={() => execCommand("underline")}>Underline</button>
-        <button onClick={() => execCommand("strikeThrough")}>Strike</button>
-        <button onClick={() => execCommandWithValue("formatBlock", "h1")}>
-          H1
-        </button>
-        <button onClick={() => execCommandWithValue("formatBlock", "h2")}>
-          H2
-        </button>
-        <button onClick={() => execCommand("insertUnorderedList")}>
-          Bullet List
-        </button>
-        <button onClick={() => execCommand("insertOrderedList")}>
-          Numbered List
-        </button>
-        <button onClick={() => execCommand("justifyLeft")}>Left Align</button>
-        <button onClick={() => execCommand("justifyCenter")}>
-          Center Align
-        </button>
-        <button onClick={() => execCommand("justifyRight")}>Right Align</button>
-        <button onClick={() => execCommand("justifyFull")}>Justify</button>
-        <button onClick={() => execCommand("createLink")}>Insert Link</button>
-        <button onClick={() => execCommand("unlink")}>Remove Link</button>
+        <EditorButton onClick={() => execCommand("bold")} icon={icons.bold} />
+        <EditorButton
+          onClick={() => execCommand("italic")}
+          icon={icons.italic}
+        />
+        <EditorButton
+          onClick={() => execCommand("underline")}
+          icon={icons.underline}
+        />
+        <EditorButton
+          onClick={() => execCommand("strikeThrough")}
+          icon={icons.strikethrough}
+        />
+        <EditorButton
+          onClick={() => execCommandWithValue("formatBlock", "h1")}
+          label="H1"
+        />
+        <EditorButton
+          onClick={() => execCommandWithValue("formatBlock", "h2")}
+          label="H2"
+        />
+        <EditorButton
+          onClick={() => execCommand("insertUnorderedList")}
+          icon={icons.unorderedlist}
+        />
+        <EditorButton
+          onClick={() => execCommand("insertOrderedList")}
+          icon={icons.orderedlist}
+        />
+        <EditorButton
+          onClick={() => execCommand("justifyLeft")}
+          icon={icons.alignLeft}
+        />
+        <EditorButton
+          onClick={() => execCommand("justifyCenter")}
+          icon={icons.alightCenter}
+        />
+        <EditorButton
+          onClick={() => execCommand("justifyRight")}
+          icon={icons.alignRight}
+        />
+        <EditorButton
+          onClick={() => execCommand("justifyFull")}
+          icon={icons.alignJustify}
+        />
+        <EditorButton
+          onClick={() => execCommand("createLink")}
+          icon={icons.link}
+        />
+        <EditorButton
+          onClick={() => execCommand("unlink")}
+          icon={icons.unlink}
+          isActive={true}
+        />
       </div>
       <div
         ref={editorRef}
