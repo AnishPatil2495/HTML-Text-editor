@@ -10,23 +10,7 @@ const CodeView = ({ content, onChange }) => {
     <textarea
       value={content}
       onChange={(e) => onChange(e)}
-      style={{
-        width: "100%",
-        height: "400px",
-        padding: "10px",
-        border: "1px solid #ccc",
-        fontFamily: "monospace",
-        fontSize: "14px",
-        backgroundColor: "#2d2d2d",
-        color: "#ffffff",
-        lineHeight: "1.5",
-        whiteSpace: "pre",
-        overflow: "auto",
-        caretColor: "#ffffff",
-        outline: "none",
-        resize: "none",
-        borderRadius: "4px",
-      }}
+      className='codeview'
     />
   );
 };
@@ -599,208 +583,173 @@ const TextEditor = () => {
   }
 
   return (
-    <div className="text-editor">
-      <div className="toolbar">
-        <select
-          value={selectedBlock}
-          onChange={(e) => changeBlockType(e.target.value)}
-          style={{
-            padding: "10px 15px",
-            // margin: "5px",
-            borderRadius: "4px",
-            border: "1px solid #282c34",
-            backgroundColor: "#282c34",
-            color: "#ffffff",
-            cursor: "pointer",
-          }}
-        >
-          <option value="p">Paragraph</option>
-          <option value="h1">Heading 1</option>
-          <option value="h2">Heading 2</option>
-          <option value="h3">Heading 3</option>
-          <option value="h4">Heading 4</option>
-          <option value="h5">Heading 5</option>
-          <option value="h6">Heading 6</option>
-        </select>
+    <div className='text-editor'>
+      <div className='toolbar'>
+        <div className='toolbar-buttons'>
+          <EditorButton
+            onClick={() => toggleStyle("b")}
+            icon={icons.bold}
+            isActive={activeCommands.includes("b")}
+            title='Bold'
+          />
+          <EditorButton
+            onClick={() => toggleStyle("i")}
+            icon={icons.italic}
+            isActive={activeCommands.includes("i")}
+            title='Italic'
+          />
+          <EditorButton
+            onClick={() => toggleStyle("u")}
+            icon={icons.underline}
+            isActive={activeCommands.includes("u")}
+            title='Underline'
+          />
+          <EditorButton
+            onClick={() => toggleStyle("strike")}
+            icon={icons.strikethrough}
+            isActive={activeCommands.includes("strike")}
+            title='Strikethrough'
+          />
+          <EditorButton
+            onClick={() => toggleList("ul")}
+            icon={icons.unorderedlist}
+            isActive={activeCommands.includes("ul")}
+            title='Unordered List'
+          />
+          <EditorButton
+            onClick={() => toggleList("ol")}
+            icon={icons.orderedlist}
+            isActive={activeCommands.includes("ol")}
+            title='Ordered List'
+          />
+          <EditorButton
+            onClick={() => justifyText("left")}
+            icon={icons.alignLeft}
+            isActive={activeCommands.includes("justifyLeft")}
+            title='Align Left'
+          />
+          <EditorButton
+            onClick={() => justifyText("center")}
+            icon={icons.alightCenter}
+            isActive={activeCommands.includes("justifyCenter")}
+            title='Align Center'
+          />
+          <EditorButton
+            onClick={() => justifyText("right")}
+            icon={icons.alignRight}
+            isActive={activeCommands.includes("justifyRight")}
+            title='Align Right'
+          />
+          <EditorButton
+            onClick={() => justifyText("justify")}
+            icon={icons.alignJustify}
+            isActive={activeCommands.includes("justify")}
+            title='Justify'
+          />
+          <EditorButton
+            onClick={createLink}
+            icon={icons.link}
+            isActive={activeCommands.includes("a")}
+            title='Insert Link'
+          />
+          <EditorButton
+            onClick={unlink}
+            icon={icons.unlink}
+            isActive={false} // Unlink is never active initially
+            title='Remove Link'
+          />
+          <EditorButton
+            onClick={undo}
+            icon={icons.undo}
+            isActive={false} // Undo is never active initially
+            title='Undo'
+          />
+          <EditorButton
+            onClick={redo}
+            icon={icons.redo}
+            isActive={false} // Redo is never active initially
+            title='Redo'
+          />
 
-        <select
-          value={fontSize}
-          onChange={(e) => changeFontSize(e.target.value)}
-          style={{
-            padding: "10px 15px",
-            // margin: "5px",
-            borderRadius: "4px",
-            border: "1px solid #282c34",
-            backgroundColor: "#282c34",
-            color: "#ffffff",
-            cursor: "pointer",
-          }}
-        >
-          <option value="12px">12</option>
-          <option value="14px">14</option>
-          <option value="16px">16</option>
-          <option value="18px">18</option>
-          <option value="20px">20</option>
-          <option value="24px">24</option>
-          <option value="28px">28</option>
-          <option value="32px">32</option>
-        </select>
-
-        <select
-          value={fontFamily}
-          onChange={(e) => applyFontToSelection(e.target.value)}
-          style={{
-            padding: "10px 15px",
-            // margin: "5px",
-            borderRadius: "4px",
-            border: "1px solid #282c34",
-            backgroundColor: "#282c34",
-            color: "#ffffff",
-            cursor: "pointer",
-          }}
-        >
-          <option value="Roboto">Roboto</option>
-          <option value="Times New Roman">Times New Roman</option>
-          <option value="Courier New">Courier New</option>
-          <option value="verdana">verdana</option>
-        </select>
-
-        <div
-          style={{
-            padding: "5px 10px",
-            margin: "5px",
-            borderRadius: "4px",
-            border: "1px solid #ccc",
-            backgroundColor: "#282c34",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <input
-            type="color"
-            value={selectedColor}
-            onChange={(e) => applyColor(e.target.value)}
-            style={{
-              backgroundColor: "transparent",
-              border: "none",
-              width: "2rem",
-              height: "2rem",
-              cursor: "pointer",
-              padding: "0",
-            }}
+          <EditorButton
+            onClick={handleImageUpload}
+            icon={icons.imageUpload}
+            isActive={false}
+            title='Insert Image'
+          />
+          <EditorButton
+            onClick={toggleCodeView}
+            icon={icons.code}
+            isActive={codeView}
           />
         </div>
 
-        <EditorButton
-          onClick={() => toggleStyle("b")}
-          icon={icons.bold}
-          isActive={activeCommands.includes("b")}
-          title="Bold"
-        />
-        <EditorButton
-          onClick={() => toggleStyle("i")}
-          icon={icons.italic}
-          isActive={activeCommands.includes("i")}
-          title="Italic"
-        />
-        <EditorButton
-          onClick={() => toggleStyle("u")}
-          icon={icons.underline}
-          isActive={activeCommands.includes("u")}
-          title="Underline"
-        />
-        <EditorButton
-          onClick={() => toggleStyle("strike")}
-          icon={icons.strikethrough}
-          isActive={activeCommands.includes("strike")}
-          title="Strikethrough"
-        />
-        <EditorButton
-          onClick={() => toggleList("ul")}
-          icon={icons.unorderedlist}
-          isActive={activeCommands.includes("ul")}
-          title="Unordered List"
-        />
-        <EditorButton
-          onClick={() => toggleList("ol")}
-          icon={icons.orderedlist}
-          isActive={activeCommands.includes("ol")}
-          title="Ordered List"
-        />
-        <EditorButton
-          onClick={() => justifyText("left")}
-          icon={icons.alignLeft}
-          isActive={activeCommands.includes("justifyLeft")}
-          title="Align Left"
-        />
-        <EditorButton
-          onClick={() => justifyText("center")}
-          icon={icons.alightCenter}
-          isActive={activeCommands.includes("justifyCenter")}
-          title="Align Center"
-        />
-        <EditorButton
-          onClick={() => justifyText("right")}
-          icon={icons.alignRight}
-          isActive={activeCommands.includes("justifyRight")}
-          title="Align Right"
-        />
-        <EditorButton
-          onClick={() => justifyText("justify")}
-          icon={icons.alignJustify}
-          isActive={activeCommands.includes("justify")}
-          title="Justify"
-        />
-        <EditorButton
-          onClick={createLink}
-          icon={icons.link}
-          isActive={activeCommands.includes("a")}
-          title="Insert Link"
-        />
-        <EditorButton
-          onClick={unlink}
-          icon={icons.unlink}
-          isActive={false} // Unlink is never active initially
-          title="Remove Link"
-        />
-        <EditorButton
-          onClick={undo}
-          icon={icons.undo}
-          isActive={false} // Undo is never active initially
-          title="Undo"
-        />
-        <EditorButton
-          onClick={redo}
-          icon={icons.redo}
-          isActive={false} // Redo is never active initially
-          title="Redo"
-        />
+        <div className='toolbar-selects'>
+          <select
+            value={selectedBlock}
+            onChange={(e) => changeBlockType(e.target.value)}
+            className='action-selects'>
+            <option value='p'>Paragraph</option>
+            <option value='h1'>Heading 1</option>
+            <option value='h2'>Heading 2</option>
+            <option value='h3'>Heading 3</option>
+            <option value='h4'>Heading 4</option>
+            <option value='h5'>Heading 5</option>
+            <option value='h6'>Heading 6</option>
+          </select>
 
-        <EditorButton
-          onClick={handleImageUpload}
-          icon={icons.imageUpload}
-          isActive={false}
-          title="Insert Image"
-        />
-        <EditorButton
-          onClick={toggleCodeView}
-          icon={icons.code}
-          isActive={codeView}
-        />
+          <select
+            value={fontSize}
+            onChange={(e) => changeFontSize(e.target.value)}
+            className='action-selects'>
+            <option value='12px'>12</option>
+            <option value='14px'>14</option>
+            <option value='16px'>16</option>
+            <option value='18px'>18</option>
+            <option value='20px'>20</option>
+            <option value='24px'>24</option>
+            <option value='28px'>28</option>
+            <option value='32px'>32</option>
+          </select>
+
+          <select
+            value={fontFamily}
+            onChange={(e) => applyFontToSelection(e.target.value)}
+            className='action-selects'>
+            <option value='Roboto'>Roboto</option>
+            <option value='Times New Roman'>Times New Roman</option>
+            <option value='Courier New'>Courier New</option>
+            <option value='verdana'>verdana</option>
+          </select>
+
+          <div className='action-selects'>
+            <input
+              type='color'
+              value={selectedColor}
+              onChange={(e) => applyColor(e.target.value)}
+              style={{
+                backgroundColor: "transparent",
+                border: "none",
+                // width: "2rem",
+                height: "2rem",
+                cursor: "pointer",
+                width: "100%",
+              }}
+            />
+          </div>
+        </div>
       </div>
       {codeView ? (
         <CodeView content={editorContent} onChange={handleChange} />
       ) : (
         <ContentEditable
-          id="editor"
+          id='editor'
           innerRef={divRef}
           html={decodeHtml(editorContent)}
           disabled={false}
           onChange={(e) => handleChange(e)}
           style={{
-            border: "1px solid #ccc",
+            // border: "1px solid #ccc",
             padding: "10px",
             minHeight: "100px",
             textAlign: "left",
