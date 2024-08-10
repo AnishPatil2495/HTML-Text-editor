@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./TextEditor.css";
 import { EditorButton } from "./components/button/button";
 import { icons } from "./assets";
+import ContentEditable from "./ContentEditable";
 
 const TextEditor = () => {
+  const divRef = useRef(null);
   const [activeCommands, setActiveCommands] = useState([]);
   const [editorContent, setEditorContent] = useState("");
   const [selectedBlock, setSelectedBlock] = useState("p"); // Default to paragraph
@@ -32,7 +34,7 @@ const TextEditor = () => {
     const range = selection.getRangeAt(0);
     const parent = selection.anchorNode.parentNode;
 
-    if (parent.tagName === tag.toUpperCase()) {
+    if (parent.tagName === tag) {
       const text = document.createTextNode(parent.innerText);
       parent.parentNode.replaceChild(text, parent);
       setEditorContent(document.getElementById("editor").innerHTML);
@@ -53,7 +55,7 @@ const TextEditor = () => {
     if (!selection.rangeCount) return;
 
     const parent = selection.anchorNode.parentNode;
-    if (parent.tagName === tag.toUpperCase()) {
+    if (parent.tagName === tag) {
       removeStyle(tag);
     } else {
       applyStyle(tag, style);
@@ -80,7 +82,7 @@ const TextEditor = () => {
     const range = selection.getRangeAt(0);
     const parent = selection.anchorNode.parentNode;
 
-    if (parent.tagName === listType.toUpperCase()) {
+    if (parent.tagName === listType) {
       // Unwrap the list item
       const list = parent.parentNode;
       const fragment = document.createDocumentFragment();
@@ -232,7 +234,9 @@ const TextEditor = () => {
       .getElementById("editor")
       .addEventListener("keyup", checkActiveCommands);
   }, []);
-
+  const handleChange = (e) => {
+    setEditorContent(e.target.value);
+  };
   return (
     <div className='text-editor'>
       <div className='toolbar'>
@@ -322,16 +326,17 @@ const TextEditor = () => {
           isActive={false} // Unlink is never active initially
         />
       </div>
-      <div
+      <ContentEditable
         id='editor'
-        contentEditable
-        dangerouslySetInnerHTML={{ __html: editorContent }}
+        innerRef={divRef}
+        html={editorContent}
+        disabled={false}
+        onChange={handleChange}
         style={{
           border: "1px solid #ccc",
           padding: "10px",
           minHeight: "100px",
         }}
-        onInput={(e) => setEditorContent(e.currentTarget.innerHTML)}
       />
     </div>
   );
