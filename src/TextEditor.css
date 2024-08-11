@@ -42,7 +42,7 @@
   caret-color: rgb(161, 255, 20);
   color: white;
   font-size: 25px;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* heading */
